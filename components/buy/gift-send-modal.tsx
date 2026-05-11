@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Gift, AtSign, X } from 'lucide-react';
-import { sendGiftFromListingAction } from '@/app/(public)/catalog/[id]/actions';
+import {
+  lookupGiftRecipientAction,
+  sendGiftFromListingAction,
+} from '@/app/(public)/catalog/[id]/actions';
 
 export function GiftSendModal({
   listingId,
@@ -28,8 +32,8 @@ export function GiftSendModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border-2 px-4 text-[14px] font-extrabold"
-        style={{ borderColor: '#D4A24C', color: '#8C6321', background: 'rgba(212,162,76,0.06)' }}
+        className="inline-flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[10px] px-4 text-[15px] font-extrabold tracking-[-0.012em] text-white"
+        style={{ background: 'linear-gradient(135deg, #D4A24C, #B6862E)' }}
       >
         <Gift className="size-4" strokeWidth={2.25} />
         선물하기
@@ -67,28 +71,50 @@ function GiftSendDialog({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [nickname, setNickname] = useState('');
+  const [username, setUsername] = useState('');
   const [qty, setQty] = useState(1);
   const [message, setMessage] = useState('');
   const [pending, start] = useTransition();
+  type UsernameStatus = 'idle' | 'checking' | 'valid' | 'not_found' | 'self';
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
+
+  async function validateUsername() {
+    const trimmed = username.trim().replace(/^@/, '');
+    if (!trimmed) {
+      setUsernameStatus('idle');
+      return;
+    }
+    setUsernameStatus('checking');
+    const fd = new FormData();
+    fd.set('username', trimmed);
+    const r = await lookupGiftRecipientAction(fd);
+    if (!r.ok) {
+      setUsernameStatus('idle');
+      return;
+    }
+    if (r.data.isSelf) setUsernameStatus('self');
+    else if (r.data.found) setUsernameStatus('valid');
+    else setUsernameStatus('not_found');
+  }
 
   const total = qty * unitPrice;
   const shortage = Math.max(total - myBalance, 0);
   const canSubmit =
-    !pending && nickname.trim().length > 0 && qty >= 1 && qty <= maxQty && shortage === 0;
+    !pending && usernameStatus === 'valid' && qty >= 1 && qty <= maxQty && shortage === 0;
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!canSubmit) return;
+    const trimmedUsername = username.trim().replace(/^@/, '');
     const fd = new FormData();
     fd.set('listing_id', listingId);
-    fd.set('recipient_nickname', nickname.trim().replace(/^@/, ''));
+    fd.set('recipient_username', trimmedUsername);
     fd.set('qty', String(qty));
     fd.set('message', message);
     start(async () => {
       const r = await sendGiftFromListingAction(fd);
       if (r.ok) {
-        toast.success(`${nickname}에게 선물이 발송됐어요`);
+        toast.success(`@${trimmedUsername}에게 선물이 발송됐어요`);
         onClose();
         router.refresh();
       } else {
@@ -97,9 +123,11 @@ function GiftSendDialog({
     });
   }
 
-  return (
+  if (typeof window === 'undefined') return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -129,14 +157,14 @@ function GiftSendDialog({
           </button>
           <div className="relative">
             <div
-              className="text-[12px] font-extrabold tracking-[0.10em] uppercase"
+              className="text-[13px] font-extrabold tracking-[0.10em] uppercase"
               style={{ color: '#D4A24C' }}
             >
               선물하기
             </div>
             <h2 className="mt-1 text-[20px] font-extrabold tracking-[-0.018em]">{skuLabel}</h2>
             {storeName && (
-              <div className="mt-0.5 text-[13px] text-white/65">
+              <div className="mt-0.5 text-[14px] text-white/65">
                 {storeName} · 에이전트 직영 매물
               </div>
             )}
@@ -145,25 +173,56 @@ function GiftSendDialog({
 
         {/* body */}
         <div className="grid gap-4 px-6 py-5">
-          <Field label="받는 사람 닉네임" required>
+          <Field label="받는 사람 아이디" required>
             <div className="relative">
               <AtSign
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
                 strokeWidth={2}
               />
               <input
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="닉네임을 입력하세요"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (usernameStatus !== 'idle') setUsernameStatus('idle');
+                }}
+                onBlur={validateUsername}
+                placeholder="아이디를 입력하세요"
                 required
                 maxLength={40}
                 autoFocus
                 className="border-border focus:border-ticketa-blue-500 h-11 w-full rounded-[10px] border bg-white pr-3 pl-9 text-[14px] font-semibold outline-none"
+                style={
+                  usernameStatus === 'not_found' || usernameStatus === 'self'
+                    ? { borderColor: 'var(--destructive)' }
+                    : usernameStatus === 'valid'
+                      ? { borderColor: '#1F6B43' }
+                      : undefined
+                }
               />
             </div>
-            <p className="text-muted-foreground mt-1 text-[12px]">
-              상대방이 등록한 닉네임을 정확히 입력하세요. 본인에게는 보낼 수 없어요.
-            </p>
+            {usernameStatus === 'checking' && (
+              <p className="text-muted-foreground mt-1 text-[13px]">아이디 확인 중…</p>
+            )}
+            {usernameStatus === 'valid' && (
+              <p className="mt-1 text-[13px] font-bold" style={{ color: '#1F6B43' }}>
+                ✓ 받는 사람 확인됐어요
+              </p>
+            )}
+            {usernameStatus === 'not_found' && (
+              <p className="text-destructive mt-1 text-[13px] font-bold">
+                해당 아이디의 회원을 찾을 수 없어요
+              </p>
+            )}
+            {usernameStatus === 'self' && (
+              <p className="text-destructive mt-1 text-[13px] font-bold">
+                본인에게는 선물할 수 없어요
+              </p>
+            )}
+            {usernameStatus === 'idle' && (
+              <p className="text-muted-foreground mt-1 text-[13px]">
+                상대방의 아이디(@username)를 정확히 입력하세요. 본인에게는 보낼 수 없어요.
+              </p>
+            )}
           </Field>
 
           <Field label="수량" required>
@@ -193,7 +252,7 @@ function GiftSendDialog({
                 +
               </button>
             </div>
-            <p className="text-muted-foreground mt-1 text-[12px] tabular-nums">
+            <p className="text-muted-foreground mt-1 text-[13px] tabular-nums">
               최대 {Math.min(maxQty, 100).toLocaleString('ko-KR')}매 · 액면{' '}
               {unitPrice.toLocaleString('ko-KR')}원/매
             </p>
@@ -208,7 +267,7 @@ function GiftSendDialog({
               rows={2}
               className="border-border focus:border-ticketa-blue-500 w-full rounded-[10px] border bg-white px-3 py-2.5 text-[14px] outline-none"
             />
-            <div className="text-muted-foreground mt-1 text-right text-[11px] tabular-nums">
+            <div className="text-muted-foreground mt-1 text-right text-[12px] tabular-nums">
               {message.length}/200
             </div>
           </Field>
@@ -221,11 +280,11 @@ function GiftSendDialog({
               color: 'white',
             }}
           >
-            <div className="text-[12px] font-bold tracking-[0.08em] text-white/55 uppercase">
+            <div className="text-[13px] font-bold tracking-[0.08em] text-white/55 uppercase">
               결제 요약
             </div>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-[13px] text-white/70 tabular-nums">
+              <span className="text-[14px] text-white/70 tabular-nums">
                 {unitPrice.toLocaleString('ko-KR')}원 × {qty.toLocaleString('ko-KR')}매
               </span>
               <span
@@ -235,12 +294,12 @@ function GiftSendDialog({
                 {total.toLocaleString('ko-KR')}원
               </span>
             </div>
-            <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-[12px] tabular-nums">
+            <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-[13px] tabular-nums">
               <span className="text-white/55">내 잔액</span>
               <span className="text-white/85">{myBalance.toLocaleString('ko-KR')}원</span>
             </div>
             {shortage > 0 && (
-              <div className="bg-destructive/15 text-destructive mt-2 rounded-[8px] px-3 py-2 text-[12px] font-bold">
+              <div className="bg-destructive/15 text-destructive mt-2 rounded-[8px] px-3 py-2 text-[13px] font-bold">
                 cash 잔액이 부족해요 ·{' '}
                 <span className="tabular-nums">{shortage.toLocaleString('ko-KR')}원</span> 필요
               </div>
@@ -250,7 +309,7 @@ function GiftSendDialog({
 
         {/* footer */}
         <div className="border-border bg-warm-50/40 flex items-center justify-between border-t px-6 py-3.5">
-          <p className="text-muted-foreground text-[11px]">발송 후에도 수령 전이면 환불 가능</p>
+          <p className="text-muted-foreground text-[12px]">발송 후에도 수령 전이면 환불 가능</p>
           <div className="flex gap-2">
             <button
               type="button"
@@ -270,7 +329,8 @@ function GiftSendDialog({
           </div>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -285,7 +345,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-bold">
+      <label className="mb-1.5 block text-[14px] font-bold">
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </label>

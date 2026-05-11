@@ -1,7 +1,4 @@
 import { z } from 'zod';
-import { KOREAN_BANKS } from '@/lib/domain/banks';
-
-const bankCodes = KOREAN_BANKS.map((b) => b.code) as [string, ...string[]];
 
 /**
  * 사용자 충전 요청 (무통장입금 전용 MVP).
@@ -23,12 +20,12 @@ export type ChargeRequestInput = z.infer<typeof chargeRequestSchema>;
 
 /**
  * 사용자 출금 신청. cash_balance 한정이며 RPC 가 최종 검증.
+ * 등록된 정산 계좌(seller_payout_accounts)의 id 를 받아 액션이 bank_code/last4/holder 를
+ * 조회 후 RPC 호출. 폼에 계좌 재입력 없음.
  */
 export const withdrawRequestSchema = z.object({
   amount: z.coerce.number().int('정수 금액이어야 합니다').min(1, '금액은 1 이상이어야 합니다'),
-  bank_code: z.enum(bankCodes),
-  account_number: z.string().regex(/^\d{10,16}$/, '계좌번호는 숫자 10-16자리'),
-  account_holder: z.string().min(1, '예금주를 입력해주세요').max(40, '40자 이내'),
+  account_id: z.string().uuid('등록된 계좌를 선택해주세요'),
 });
 export type WithdrawRequestInput = z.infer<typeof withdrawRequestSchema>;
 

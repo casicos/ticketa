@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/guards';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -15,16 +16,23 @@ type InventoryRow = {
     brand: string;
     denomination: number;
     display_name: string;
+    thumbnail_url: string | null;
   } | null;
 };
 
-const BRAND_LABEL: Record<string, string> = {
-  lotte: '롯데',
-  hyundai: '현대',
-  shinsegae: '신세계',
-  galleria: '갤러리아',
-  ak: 'AK',
+// DB brand("AK백화점") → DeptMark 키 + 짧은 라벨
+const BRAND_TO_DEPT: Record<string, Department> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
 };
+
+function shortBrandLabel(brand: string): string {
+  const stripped = brand.replace(/백화점$/, '').trim();
+  return stripped || brand;
+}
 
 export default async function AgentInventoryPage() {
   const current = await getCurrentUser();
@@ -34,7 +42,7 @@ export default async function AgentInventoryPage() {
   const { data } = await supabase
     .from('agent_inventory')
     .select(
-      'id, qty_available, qty_reserved, unit_cost, sku:sku_id(id, brand, denomination, display_name)',
+      'id, qty_available, qty_reserved, unit_cost, sku:sku_id(id, brand, denomination, display_name, thumbnail_url)',
     )
     .eq('agent_id', current.auth.id)
     .order('created_at', { ascending: false });
@@ -78,10 +86,10 @@ export default async function AgentInventoryPage() {
           <table className="w-full border-collapse text-[14px]">
             <thead className="bg-warm-50">
               <tr>
-                {['SKU', '권종', '보유 · 판매중', '판매 진행률', '액션'].map((h) => (
+                {['상품권', '액면', '보유 · 판매중', '판매 진행률', '액션'].map((h) => (
                   <th
                     key={h}
-                    className="text-muted-foreground px-4 py-3 text-left text-[12px] font-extrabold tracking-[0.06em] uppercase"
+                    className="text-muted-foreground px-4 py-3 text-left text-[13px] font-extrabold tracking-[0.06em] uppercase"
                   >
                     {h}
                   </th>
@@ -92,20 +100,38 @@ export default async function AgentInventoryPage() {
               {rows.map((r) => {
                 const totalQty = r.qty_available + r.qty_reserved;
                 const pctListed = totalQty ? (r.qty_reserved / totalQty) * 100 : 0;
+                const brand = r.sku?.brand ?? '';
+                const dept = BRAND_TO_DEPT[brand];
+                const thumb = r.sku?.thumbnail_url ?? null;
+                const denom = r.sku?.denomination ?? 0;
                 const skuLabel = r.sku
-                  ? `${BRAND_LABEL[r.sku.brand] ?? r.sku.brand} ${r.sku.denomination.toLocaleString('ko-KR')}원권`
-                  : '알 수 없는 SKU';
+                  ? `${shortBrandLabel(brand)} ${denom.toLocaleString('ko-KR')}원권`
+                  : '알 수 없는 상품권';
                 return (
                   <tr key={r.id} className="border-warm-100 border-t">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2.5">
-                        <DeptMark dept={(r.sku?.brand ?? 'lotte') as Department} size={32} />
+                        {thumb ? (
+                          <div className="border-warm-200 relative size-8 shrink-0 overflow-hidden rounded-[8px] border bg-white">
+                            <Image
+                              src={thumb}
+                              alt={skuLabel}
+                              fill
+                              sizes="32px"
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : dept ? (
+                          <DeptMark dept={dept} size={32} />
+                        ) : (
+                          <DeptMark dept={brand} size={32} />
+                        )}
                         <div>
                           <div className="text-[14px] font-extrabold">
-                            {BRAND_LABEL[r.sku?.brand ?? 'lotte'] ?? r.sku?.brand}
+                            {shortBrandLabel(brand)} 백화점
                           </div>
-                          <div className="text-muted-foreground font-mono text-[11px]">
-                            {r.sku?.brand}-{r.sku?.denomination ?? 0}
+                          <div className="text-muted-foreground text-[12px]">
+                            {denom.toLocaleString('ko-KR')}원권
                           </div>
                         </div>
                       </div>
@@ -114,7 +140,7 @@ export default async function AgentInventoryPage() {
                       {r.sku?.denomination.toLocaleString('ko-KR') ?? 0}원
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex gap-3.5 text-[13px] tabular-nums">
+                      <div className="flex gap-3.5 text-[14px] tabular-nums">
                         <span className="inline-flex items-center gap-1.5">
                           <span
                             className="size-1.5 rounded-full"
@@ -138,7 +164,7 @@ export default async function AgentInventoryPage() {
                           매
                         </span>
                       </div>
-                      <div className="text-muted-foreground mt-1 text-[11px] tabular-nums">
+                      <div className="text-muted-foreground mt-1 text-[12px] tabular-nums">
                         단가 {r.unit_cost.toLocaleString('ko-KR')}원
                       </div>
                     </td>
@@ -146,7 +172,7 @@ export default async function AgentInventoryPage() {
                       <div className="bg-warm-100 flex h-2 overflow-hidden rounded-full">
                         <div style={{ width: `${pctListed}%`, background: '#D4A24C' }} />
                       </div>
-                      <div className="text-muted-foreground mt-1 text-[11px] tabular-nums">
+                      <div className="text-muted-foreground mt-1 text-[12px] tabular-nums">
                         {pctListed.toFixed(0)}% 활성
                       </div>
                     </td>
@@ -157,8 +183,9 @@ export default async function AgentInventoryPage() {
                         reserved={r.qty_reserved}
                         unitCost={r.unit_cost}
                         skuLabel={skuLabel}
-                        skuBrand={r.sku?.brand ?? 'lotte'}
-                        skuDenomination={r.sku?.denomination ?? 0}
+                        skuBrand={brand}
+                        skuDenomination={denom}
+                        skuThumbnailUrl={thumb}
                       />
                     </td>
                   </tr>
@@ -169,8 +196,8 @@ export default async function AgentInventoryPage() {
         </div>
       )}
 
-      <p className="text-muted-foreground mt-4 text-[13px]">
-        판매 등록한 매물은 카탈로그에 [인증] 매물로 즉시 노출돼요. 매입 → 어드민 발송 처리 → 완료 시
+      <p className="text-muted-foreground mt-4 text-[14px]">
+        판매 등록한 매물은 카탈로그에 인증 매물로 즉시 노출돼요. 매입 → 어드민 발송 처리 → 완료 시
         자동으로 정산이 이뤄집니다.
       </p>
     </>

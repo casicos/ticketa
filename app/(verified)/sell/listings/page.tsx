@@ -37,6 +37,8 @@ export default async function SellListingsPage({
       'id, status, quantity_offered, quantity_remaining, unit_price, submitted_at, sku:sku_id(display_name, brand, thumbnail_url)',
     )
     .eq('seller_id', current.auth.id)
+    // 분할 매입 자식 listing 은 부모(원본)만 노출 — 개별 구매자 단위는 어드민 발송 큐에서 처리
+    .is('parent_listing_id', null)
     .order('submitted_at', { ascending: false });
 
   const rows = (rowsRaw ?? []) as unknown as SellListingRow[];

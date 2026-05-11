@@ -4,6 +4,15 @@ import { shortId } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { VerifiedBadge, StoreNameLabel, AnonSellerLabel } from './listing-badges';
 
+// DB 의 sku.brand 는 한글 풀네임("롯데백화점"). DeptMark / DEPARTMENT_LABEL 은 영문 키 사용.
+const BRAND_TO_DEPT: Record<string, Department> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
+};
+
 export type ListingCardData = {
   id: string;
   unit_price: number;
@@ -38,7 +47,7 @@ function relativeTime(iso: string): string {
  * 디자인: screens-p0-additions::ListingCardP0
  */
 export function DesktopListingCard({ listing }: { listing: ListingCardData }) {
-  const dept = listing.sku.brand as Department;
+  const dept = BRAND_TO_DEPT[listing.sku.brand] ?? 'lotte';
   const isAgent = Boolean(listing.store_name);
   const isVerified = Boolean(listing.pre_verified && listing.verified_at);
   const diff = listing.unit_price - listing.sku.denomination;
@@ -84,7 +93,7 @@ export function DesktopListingCard({ listing }: { listing: ListingCardData }) {
       {/* 1. Top meta row */}
       <div className="flex min-h-[22px] items-center gap-2">
         <DeptMark dept={dept} size={26} />
-        <span className="text-muted-foreground text-[13px] font-semibold">
+        <span className="text-muted-foreground text-[14px] font-semibold">
           {DEPARTMENT_LABEL[dept] ?? dept}
         </span>
         <span className="bg-border h-2.5 w-px" />
@@ -107,14 +116,14 @@ export function DesktopListingCard({ listing }: { listing: ListingCardData }) {
           <span className="text-muted-foreground ml-0.5 text-[14px] font-bold">원</span>
         </span>
       </div>
-      <div className="text-[12px] font-semibold tabular-nums" style={{ color: diffColor }}>
+      <div className="text-[13px] font-semibold tabular-nums" style={{ color: diffColor }}>
         {diffLabel}
       </div>
 
       {/* 4. Bottom strip */}
       <div className="border-border mt-auto flex items-center justify-between gap-2 border-t border-dashed pt-2.5">
         <div>{isVerified && <VerifiedBadge size="sm" />}</div>
-        <span className="text-muted-foreground text-[12px]">
+        <span className="text-muted-foreground text-[13px]">
           수량 {listing.quantity_offered.toLocaleString('ko-KR')}장 ·{' '}
           {relativeTime(listing.submitted_at)}
         </span>
@@ -128,7 +137,7 @@ export function DesktopListingCard({ listing }: { listing: ListingCardData }) {
  * 디자인: screens-p0-additions::MobileListingCardP0
  */
 export function MobileListingCard({ listing }: { listing: ListingCardData }) {
-  const dept = listing.sku.brand as Department;
+  const dept = BRAND_TO_DEPT[listing.sku.brand] ?? 'lotte';
   const isAgent = Boolean(listing.store_name);
   const isVerified = Boolean(listing.pre_verified && listing.verified_at);
   const diff = listing.unit_price - listing.sku.denomination;
@@ -161,7 +170,7 @@ export function MobileListingCard({ listing }: { listing: ListingCardData }) {
       )}
       <div className="flex items-center gap-2">
         <DeptMark dept={dept} size={24} />
-        <span className="text-muted-foreground text-[12px] font-semibold">
+        <span className="text-muted-foreground text-[13px] font-semibold">
           {DEPARTMENT_LABEL[dept] ?? dept}
         </span>
         <div className="ml-auto">
@@ -178,17 +187,17 @@ export function MobileListingCard({ listing }: { listing: ListingCardData }) {
       <div className="flex items-baseline justify-between">
         <span className="text-[19px] font-extrabold tracking-[-0.018em] tabular-nums">
           {listing.unit_price.toLocaleString('ko-KR')}
-          <span className="text-muted-foreground ml-0.5 text-[13px] font-bold">원</span>
+          <span className="text-muted-foreground ml-0.5 text-[14px] font-bold">원</span>
         </span>
         {isVerified && <VerifiedBadge size="sm" />}
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[12px] font-semibold tabular-nums" style={{ color: diffColor }}>
+        <span className="text-[13px] font-semibold tabular-nums" style={{ color: diffColor }}>
           {diff === 0
             ? '액면가 동일'
             : `${diff < 0 ? '↓' : '↑'} 액면 ${diff < 0 ? '-' : '+'}${Math.abs(diffPct).toFixed(1)}%`}
         </span>
-        <span className="text-muted-foreground text-[11px]">
+        <span className="text-muted-foreground text-[12px]">
           수량 {listing.quantity_offered.toLocaleString('ko-KR')}장 ·{' '}
           {relativeTime(listing.submitted_at)}
         </span>

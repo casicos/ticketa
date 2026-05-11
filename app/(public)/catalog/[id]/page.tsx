@@ -15,6 +15,7 @@ type ListingRow = {
   status: string;
   unit_price: number;
   quantity_offered: number;
+  quantity_remaining: number;
   submitted_at: string;
   seller_id: string;
   pre_verified: boolean;
@@ -27,17 +28,6 @@ type ListingRow = {
     thumbnail_url: string | null;
   } | null;
   seller: { store_name: string | null } | null;
-};
-
-const STATUS_TO_STAGE: Record<string, number> = {
-  submitted: 0,
-  purchased: 1,
-  handed_over: 2,
-  received: 3,
-  verified: 4,
-  shipped: 5,
-  completed: 6,
-  cancelled: -1,
 };
 
 export default async function CatalogListingDetailPage({
@@ -54,10 +44,11 @@ export default async function CatalogListingDetailPage({
     supabase
       .from('listing')
       .select(
-        'id, status, unit_price, quantity_offered, submitted_at, seller_id, pre_verified, verified_at, sku:sku_id(id, brand, denomination, display_name, thumbnail_url), seller:seller_id(store_name)',
+        'id, status, unit_price, quantity_offered, quantity_remaining, submitted_at, seller_id, pre_verified, verified_at, sku:sku_id(id, brand, denomination, display_name, thumbnail_url), seller:seller_id(store_name)',
       )
       .eq('id', id)
       .eq('status', 'submitted')
+      .is('parent_listing_id', null)
       .maybeSingle(),
   ]);
 
@@ -66,30 +57,34 @@ export default async function CatalogListingDetailPage({
   // pre_verified 매물은 admin 검수 끝나야 공개. 그 전 직접 URL 접근도 차단.
   if (listing.pre_verified && !listing.verified_at) notFound();
   const sku = listing.sku!;
-  const dept = sku.brand as Department;
+  // DB 의 sku.brand 는 한글 풀네임("AK백화점"). DeptMark/DEPARTMENT_LABEL 은 영문 키 사용.
+  const BRAND_TO_DEPT: Record<string, Department> = {
+    롯데백화점: 'lotte',
+    현대백화점: 'hyundai',
+    신세계백화점: 'shinsegae',
+    갤러리아백화점: 'galleria',
+    AK백화점: 'ak',
+  };
+  const dept = BRAND_TO_DEPT[sku.brand] ?? 'lotte';
 
-  // 에이전트 매물 여부 — 선물하기 버튼 노출 조건
-  const { data: agentRoleRow } = await supabase
-    .from('user_roles')
-    .select('id')
-    .eq('user_id', listing.seller_id)
-    .eq('role', 'agent')
-    .is('revoked_at', null)
-    .maybeSingle();
-  const isAgentListing = !!agentRoleRow;
+  // 에이전트 매물 여부 — create_agent_listing 이 pre_verified=true 로 세팅하므로 그걸로 판정.
+  // (예전엔 user_roles 조회했는데 composite PK 라 `id` 컬럼이 없어 항상 null 이 떨어짐 — 가격 표시 버그 원인)
+  const isAgentListing = listing.pre_verified;
 
   // 일반 phone_verified 회원도 직접 구매 가능 (P2P 마켓플레이스 모델).
   // 본인이 등록한 매물은 RPC 단계에서 SELF_PURCHASE_FORBIDDEN 으로 차단.
   const canBuy = !!current && (current.profile?.phone_verified ?? false);
   const balance = current && canBuy ? await fetchMyMileageBalance(supabase) : null;
+  // 보는 사람이 에이전트면 "매입" 용어, 일반 회원이면 "구매" 용어로 표기
+  const viewerIsAgent = current?.roles.includes('agent') ?? false;
 
-  const gross = listing.unit_price * listing.quantity_offered;
-  const hasEnough = balance ? balance.total >= gross : false;
-  const shortage = balance ? Math.max(gross - balance.total, 0) : gross;
-  const ratio = balance && gross > 0 ? Math.min(1, balance.total / gross) : 0;
-
-  const stageIndex = STATUS_TO_STAGE[listing.status] ?? 0;
-  const allDone = listing.status === 'completed';
+  // 남은 수량(quantity_remaining) 기준. 에이전트 매물은 1매부터, P2P 는 전량만.
+  const remaining = listing.quantity_remaining;
+  const maxGross = listing.unit_price * remaining; // 전량
+  const requiredGross = isAgentListing ? listing.unit_price : maxGross;
+  const hasEnough = balance ? balance.total >= requiredGross : false;
+  const shortage = balance ? Math.max(requiredGross - balance.total, 0) : requiredGross;
+  const ratio = balance && maxGross > 0 ? Math.min(1, balance.total / maxGross) : 0;
 
   const displayName =
     sku.display_name ??
@@ -100,7 +95,7 @@ export default async function CatalogListingDetailPage({
       <GiftSendModal
         listingId={listing.id}
         unitPrice={listing.unit_price}
-        maxQty={Math.min(listing.quantity_offered, 100)}
+        maxQty={Math.min(remaining, 100)}
         skuLabel={displayName}
         storeName={listing.seller?.store_name ?? null}
         myBalance={balance.total}
@@ -110,7 +105,14 @@ export default async function CatalogListingDetailPage({
   const purchaseAction =
     canBuy && balance && hasEnough ? (
       <div className="grid gap-2">
-        <PurchaseConfirm listingId={listing.id} gross={gross} />
+        <PurchaseConfirm
+          listingId={listing.id}
+          unitPrice={listing.unit_price}
+          maxQty={remaining}
+          balanceTotal={balance.total}
+          partialAllowed={isAgentListing}
+          viewerIsAgent={viewerIsAgent}
+        />
         {giftButton}
       </div>
     ) : canBuy && balance && !hasEnough ? (
@@ -127,7 +129,14 @@ export default async function CatalogListingDetailPage({
   const mobileActionSlot =
     canBuy && balance && hasEnough ? (
       <div className="grid gap-2">
-        <PurchaseConfirm listingId={listing.id} gross={gross} />
+        <PurchaseConfirm
+          listingId={listing.id}
+          unitPrice={listing.unit_price}
+          maxQty={remaining}
+          balanceTotal={balance.total}
+          partialAllowed={isAgentListing}
+          viewerIsAgent={viewerIsAgent}
+        />
         {giftButton}
       </div>
     ) : (
@@ -141,15 +150,14 @@ export default async function CatalogListingDetailPage({
         listingId={listing.id}
         dept={dept}
         displayName={displayName}
+        denomination={sku.denomination}
         thumbnailUrl={sku.thumbnail_url}
         unitPrice={listing.unit_price}
-        quantity={listing.quantity_offered}
-        gross={gross}
+        quantity={remaining}
+        gross={maxGross}
         submittedAt={listing.submitted_at}
         sellerId={listing.seller_id}
         status={listing.status}
-        stageIndex={stageIndex}
-        allDone={allDone}
         canBuy={canBuy}
         balance={balance}
         hasEnough={hasEnough}
@@ -158,6 +166,8 @@ export default async function CatalogListingDetailPage({
         actionSlot={purchaseAction}
         verified={Boolean(listing.pre_verified && listing.verified_at)}
         storeName={listing.seller?.store_name ?? null}
+        partialAllowed={isAgentListing}
+        viewerIsAgent={viewerIsAgent}
       />
 
       {/* Mobile layout */}
@@ -165,16 +175,19 @@ export default async function CatalogListingDetailPage({
         listingId={listing.id}
         dept={dept}
         displayName={displayName}
+        denomination={sku.denomination}
         thumbnailUrl={sku.thumbnail_url}
         unitPrice={listing.unit_price}
-        quantity={listing.quantity_offered}
-        gross={gross}
+        quantity={remaining}
+        gross={maxGross}
         canBuy={canBuy}
         hasEnough={hasEnough}
         shortage={shortage}
         actionSlot={mobileActionSlot}
         verified={Boolean(listing.pre_verified && listing.verified_at)}
         storeName={listing.seller?.store_name ?? null}
+        partialAllowed={isAgentListing}
+        viewerIsAgent={viewerIsAgent}
       />
     </div>
   );

@@ -14,9 +14,14 @@ export type PurchaseListingResult =
   | {
       ok: true;
       listing_id: string;
+      parent_listing_id?: string;
+      status?: 'purchased' | 'verified';
+      qty?: number;
       gross: number;
       commission: number;
       seller_net: number;
+      pre_verified?: boolean;
+      parent_remaining?: number;
     }
   | {
       ok: false;
@@ -106,13 +111,22 @@ export async function callCreditMileage(args: {
 export async function callPurchaseListing(args: {
   buyerId: string;
   listingId: string;
+  qty: number;
 }): Promise<PurchaseListingResult> {
   const supabase = createSupabaseTransactionClient();
   const { data, error } = await supabase.rpc('purchase_listing', {
     p_buyer: args.buyerId,
     p_listing: args.listingId,
+    p_qty: args.qty,
   });
-  if (error) throw error;
+  if (error) {
+    // Supabase 의 PostgrestError 는 Error instance 가 아니라 plain object — 메시지를 보존해서 다시 던짐
+    const msg = error.message || error.details || error.hint || 'RPC 호출 실패';
+    const wrapped = new Error(msg) as Error & { code?: string; details?: unknown };
+    wrapped.code = error.code;
+    wrapped.details = error;
+    throw wrapped;
+  }
   return data as unknown as PurchaseListingResult;
 }
 

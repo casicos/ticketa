@@ -21,6 +21,7 @@ type ListingRow = {
   id: string;
   status: BuyListingStatus;
   seller_id: string;
+  pre_verified: boolean;
   quantity_offered: number;
   unit_price: number;
   gross_amount: number | null;
@@ -43,6 +44,11 @@ type ListingRow = {
     display_name: string;
     thumbnail_url: string | null;
   } | null;
+  seller: {
+    store_name: string | null;
+    username: string | null;
+    full_name: string | null;
+  } | null;
 };
 
 type CancellationRequestRow = {
@@ -52,20 +58,27 @@ type CancellationRequestRow = {
   requested_at: string;
 };
 
+// 구매자 관점 6단계 (submitted 이전이라 1~6)
+//   1. 결제 완료 (purchased)
+//   2. 판매자 인계 (handed_over) — P2P 만
+//   3. 어드민 수령 (received)   — P2P 만
+//   4. 검수 완료 (verified)     — agent 매물은 여기로 직행
+//   5. 발송 (shipped)
+//   6. 거래 완료 (completed)
 function buyStatusToStage(s: BuyListingStatus): StageNumber | null {
   switch (s) {
+    case 'purchased':
+      return 1;
     case 'handed_over':
       return 2;
     case 'received':
       return 3;
-    case 'purchased':
-      return 4;
     case 'verified':
-      return 5;
+      return 4;
     case 'shipped':
-      return 6;
+      return 5;
     case 'completed':
-      return 7;
+      return 6;
     case 'cancelled':
       return null;
   }
@@ -84,7 +97,7 @@ export default async function BuyOrderDetailPage({ params }: { params: Promise<{
   const { data: row } = await supabase
     .from('listing')
     .select(
-      'id, status, seller_id, quantity_offered, unit_price, gross_amount, commission_total, submitted_at, purchased_at, handed_over_at, received_at, verified_at, shipped_at, completed_at, cancelled_at, cancel_reason, admin_memo, shipping_carrier, tracking_no, sku:sku_id(brand, denomination, display_name, thumbnail_url)',
+      'id, status, seller_id, pre_verified, quantity_offered, unit_price, gross_amount, commission_total, submitted_at, purchased_at, handed_over_at, received_at, verified_at, shipped_at, completed_at, cancelled_at, cancel_reason, admin_memo, shipping_carrier, tracking_no, sku:sku_id(brand, denomination, display_name, thumbnail_url), seller:seller_id(store_name, username, full_name)',
     )
     .eq('id', id)
     .eq('buyer_id', current.auth.id)
@@ -146,9 +159,17 @@ export default async function BuyOrderDetailPage({ params }: { params: Promise<{
     </>
   );
 
+  const sellerLabel =
+    listing.seller?.store_name ||
+    listing.seller?.full_name ||
+    (listing.seller?.username ? `@${listing.seller.username}` : null) ||
+    (listing.pre_verified ? '에이전트 매물' : '개인 판매자');
+
   const sharedProps = {
     listingId: listing.id,
     sellerId: listing.seller_id,
+    sellerLabel,
+    isAgentListing: listing.pre_verified,
     status: listing.status as ListingStatus,
     stage,
     statusLabel: BUY_LISTING_STATUS_LABELS[listing.status],

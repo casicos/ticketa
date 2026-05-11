@@ -68,8 +68,8 @@ export function ShipmentInfoCard({
             </svg>
           </span>
           <div>
-            <div className="text-muted-foreground text-[13px] font-bold tracking-[0.04em] uppercase">
-              SHIPMENT
+            <div className="text-muted-foreground text-[14px] font-bold tracking-[0.04em]">
+              배송 정보
             </div>
             <div className="text-[16px] font-extrabold tracking-[-0.014em]">
               발송 완료{shippedAtLabel ? ` · ${shippedAtLabel}` : ''}
@@ -77,11 +77,11 @@ export function ShipmentInfoCard({
           </div>
         </div>
         <span
-          className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-extrabold tracking-[0.04em] uppercase"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-extrabold tracking-[0.04em] whitespace-nowrap"
           style={{ background: 'rgba(46,124,82,0.10)', color: '#1F6B43' }}
         >
-          <span className="size-1.5 rounded-full bg-[#1F6B43]" />
-          shipped
+          <span className="size-1.5 shrink-0 rounded-full bg-[#1F6B43]" />
+          배송 중
         </span>
       </div>
 
@@ -90,7 +90,7 @@ export function ShipmentInfoCard({
         <span className="text-muted-foreground font-semibold">택배사</span>
         <span className="inline-flex items-center gap-2">
           <span
-            className="inline-flex size-[22px] items-center justify-center rounded-md text-[11px] font-black"
+            className="inline-flex size-[22px] items-center justify-center rounded-md text-[12px] font-black"
             style={{ background: v.bg, color: v.fg ?? '#fff' }}
           >
             {v.short}
@@ -108,9 +108,9 @@ export function ShipmentInfoCard({
         {showAdminMemo && adminMemo && (
           <>
             <span className="text-muted-foreground font-semibold">발송 메모</span>
-            <span className="text-warm-700 text-[13px] leading-[1.5]">
+            <span className="text-warm-700 text-[14px] leading-[1.5]">
               {adminMemo}
-              <span className="bg-warm-100 text-muted-foreground ml-1.5 rounded-[4px] px-1.5 py-0.5 text-[11px] font-bold">
+              <span className="bg-warm-100 text-muted-foreground ml-1.5 rounded-[4px] px-1.5 py-0.5 text-[12px] font-bold">
                 어드민 전용
               </span>
             </span>

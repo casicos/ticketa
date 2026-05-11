@@ -19,6 +19,8 @@ type Timestamps = {
 type Props = {
   listingId: string;
   sellerId: string;
+  sellerLabel: string;
+  isAgentListing: boolean;
   status: ListingStatus;
   stage: StageNumber | null;
   statusLabel: string;
@@ -36,8 +38,12 @@ type Props = {
   actionsSlot: React.ReactNode;
 };
 
+const STEP_LABELS_MINI = ['결제', '인계', '수령', '검수', '발송', '완료'];
+
 export function MobileBuyerOrder({
   // listingId and sellerId kept in Props for API compatibility but not displayed (Policy 1)
+  sellerLabel,
+  isAgentListing,
   status,
   stage,
   statusLabel,
@@ -97,23 +103,26 @@ export function MobileBuyerOrder({
 
           {/* Mini step bar */}
           <div className="relative mt-4 flex gap-1">
-            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-              <div
-                key={n}
-                className="h-1 flex-1 rounded-full"
-                style={{
-                  background:
-                    n < currentStep
-                      ? '#5BA476'
-                      : n === currentStep
-                        ? 'linear-gradient(90deg, #5BA476, #A8C0FF)'
-                        : 'rgba(255,255,255,0.18)',
-                }}
-              />
-            ))}
+            {STEP_LABELS_MINI.map((_, i) => {
+              const n = i + 1;
+              return (
+                <div
+                  key={n}
+                  className="h-1 flex-1 rounded-full"
+                  style={{
+                    background:
+                      n < currentStep
+                        ? '#5BA476'
+                        : n === currentStep
+                          ? 'linear-gradient(90deg, #5BA476, #A8C0FF)'
+                          : 'rgba(255,255,255,0.18)',
+                  }}
+                />
+              );
+            })}
           </div>
           <div className="mt-2 flex justify-between text-[9px] font-bold text-white/50">
-            {['결제', '완료', '검수', '입금', '배송', '수령', '완료'].map((l, i) => (
+            {STEP_LABELS_MINI.map((l, i) => (
               <span
                 key={l + i}
                 style={{
@@ -164,7 +173,17 @@ export function MobileBuyerOrder({
           <dt className="text-muted-foreground">단가</dt>
           <dd className="tabular-nums">{formatKRW(unitPrice)}</dd>
           <dt className="text-muted-foreground">판매자</dt>
-          <dd className="text-muted-foreground text-xs">개인 판매자</dd>
+          <dd className="inline-flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="font-semibold">{sellerLabel}</span>
+            {isAgentListing && (
+              <span
+                className="rounded-[4px] px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.04em]"
+                style={{ background: 'rgba(212,162,76,0.14)', color: '#8C6321' }}
+              >
+                에이전트
+              </span>
+            )}
+          </dd>
           {timestamps.purchasedAt && (
             <>
               <dt className="text-muted-foreground">구매일시</dt>
@@ -174,13 +193,13 @@ export function MobileBuyerOrder({
         </dl>
         {cancelReason && (
           <div className="border-destructive/30 bg-destructive/5 mt-3 rounded-lg border p-2.5">
-            <p className="text-destructive text-[10px] font-bold">취소 사유</p>
+            <p className="text-destructive text-[12px] font-bold">취소 사유</p>
             <p className="mt-0.5 text-xs">{cancelReason}</p>
           </div>
         )}
         {adminMemo && (
           <div className="border-border bg-muted/40 mt-3 rounded-lg border p-2.5">
-            <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <p className="text-muted-foreground text-[12px] font-bold tracking-wider uppercase">
               어드민 메모
             </p>
             <pre className="mt-1 text-xs whitespace-pre-wrap">{adminMemo}</pre>

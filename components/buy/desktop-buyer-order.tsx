@@ -19,6 +19,8 @@ type Timestamps = {
 type Props = {
   listingId: string;
   sellerId: string;
+  sellerLabel: string;
+  isAgentListing: boolean;
   status: ListingStatus;
   stage: StageNumber | null;
   statusLabel: string;
@@ -36,18 +38,13 @@ type Props = {
   actionsSlot: React.ReactNode;
 };
 
-const STEP_LABELS = [
-  '결제대기',
-  '결제완료',
-  '검수완료',
-  '입금확인',
-  '배송중',
-  '수령확인',
-  '거래완료',
-];
+// 구매자 관점 6단계 — page.tsx::buyStatusToStage 와 매핑 일치
+const STEP_LABELS = ['결제 완료', '판매자 인계', '어드민 수령', '검수 완료', '발송', '거래 완료'];
 
 export function DesktopBuyerOrder({
   // listingId and sellerId kept in Props for API compatibility but not displayed (Policy 1)
+  sellerLabel,
+  isAgentListing,
   status,
   stage,
   statusLabel,
@@ -65,6 +62,7 @@ export function DesktopBuyerOrder({
   actionsSlot,
 }: Props) {
   const currentStep = stage ?? 0;
+  const totalSteps = STEP_LABELS.length;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-6 sm:px-8 sm:py-8">
@@ -134,7 +132,10 @@ export function DesktopBuyerOrder({
           <div
             className="absolute top-3 left-3 h-0.5 transition-all"
             style={{
-              width: currentStep > 1 ? `calc((100% - 24px) * ${(currentStep - 1) / 6})` : '0%',
+              width:
+                currentStep > 1
+                  ? `calc((100% - 24px) * ${(currentStep - 1) / (totalSteps - 1)})`
+                  : '0%',
               background: 'linear-gradient(90deg, #5BA476, #A8C0FF)',
             }}
           />
@@ -159,7 +160,7 @@ export function DesktopBuyerOrder({
                   {state === 'done' ? '✓' : n}
                 </div>
                 <span
-                  className="text-[10px] font-bold"
+                  className="text-[12px] font-bold"
                   style={{ color: state === 'active' ? '#A8C0FF' : 'rgba(255,255,255,0.50)' }}
                 >
                   {label}
@@ -195,6 +196,19 @@ export function DesktopBuyerOrder({
               <dt className="text-muted-foreground">단가</dt>
               <dd className="tabular-nums">{formatKRW(unitPrice)}</dd>
 
+              <dt className="text-muted-foreground">판매자</dt>
+              <dd className="inline-flex flex-wrap items-center gap-1.5">
+                <span className="font-semibold">{sellerLabel}</span>
+                {isAgentListing && (
+                  <span
+                    className="rounded-[4px] px-1.5 py-0.5 text-[11px] font-extrabold tracking-[0.04em]"
+                    style={{ background: 'rgba(212,162,76,0.14)', color: '#8C6321' }}
+                  >
+                    에이전트
+                  </span>
+                )}
+              </dd>
+
               {timestamps.purchasedAt && (
                 <>
                   <dt className="text-muted-foreground">구매일시</dt>
@@ -217,17 +231,17 @@ export function DesktopBuyerOrder({
 
             {cancelReason && (
               <div className="border-destructive/30 bg-destructive/5 mt-4 rounded-lg border p-3">
-                <p className="text-destructive text-[13px] font-bold">취소 사유</p>
+                <p className="text-destructive text-[14px] font-bold">취소 사유</p>
                 <p className="mt-1 text-[15px]">{cancelReason}</p>
               </div>
             )}
 
             {adminMemo && (
               <div className="border-border bg-muted/40 mt-4 rounded-lg border p-3.5">
-                <p className="text-muted-foreground text-[13px] font-bold tracking-wider uppercase">
+                <p className="text-muted-foreground text-[14px] font-bold tracking-wider uppercase">
                   어드민 메모
                 </p>
-                <pre className="mt-1.5 text-[13px] leading-relaxed whitespace-pre-wrap">
+                <pre className="mt-1.5 text-[14px] leading-relaxed whitespace-pre-wrap">
                   {adminMemo}
                 </pre>
               </div>
@@ -266,31 +280,6 @@ export function DesktopBuyerOrder({
           <div className="surface-card p-5">
             <h2 className="mb-3 text-[15px] font-extrabold tracking-tight">거래 관리</h2>
             {actionsSlot}
-          </div>
-
-          {/* Help */}
-          <div className="surface-card p-5">
-            <h2 className="mb-3 text-[15px] font-extrabold tracking-tight">
-              거래에 문제가 있나요?
-            </h2>
-            <div className="flex flex-col gap-2">
-              {[
-                { l: '판매자에게 문의하기', danger: false },
-                { l: '카드 잔액을 사용할 수 없어요', danger: false },
-              ].map((b) => (
-                <button
-                  key={b.l}
-                  type="button"
-                  className="border-border flex h-10 items-center justify-between rounded-lg border bg-white px-4 text-[15px] font-bold"
-                >
-                  <span>{b.l}</span>
-                  <span className="text-muted-foreground">›</span>
-                </button>
-              ))}
-            </div>
-            <div className="bg-warm-50 text-muted-foreground mt-3 rounded-lg p-3 text-base leading-relaxed">
-              결제 후 30분이 지나도 진행이 없으면 자동으로 환불 절차가 시작돼요.
-            </div>
           </div>
         </div>
       </div>

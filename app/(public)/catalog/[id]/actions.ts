@@ -7,7 +7,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requirePhoneVerified } from '@/lib/auth/guards';
 import { withServerAction } from '@/lib/server-actions';
 import { callPurchaseListing } from '@/lib/domain/mileage';
-import { sendGift } from '@/lib/domain/gifts';
+import { sendGiftFromListing } from '@/lib/domain/gifts';
+import { lookupUserByUsername } from '@/lib/domain/auth/users';
 
 /**
  * purchaseListingAction — /catalog/[id] 에서 호출되는 구매 확정 Server Action.
@@ -20,13 +21,19 @@ import { sendGift } from '@/lib/domain/gifts';
  *   5. 기타 에러 → withServerAction 이 code/message 로 변환 후 클라이언트에서 toast
  */
 
-const schema = z.object({ listing_id: z.string().uuid() });
+const schema = z.object({
+  listing_id: z.string().uuid(),
+  qty: z.coerce.number().int().min(1).max(10_000),
+});
 
 export async function purchaseListingAction(formData: FormData) {
   const result = await withServerAction('purchaseListing', async () => {
     await requirePhoneVerified();
 
-    const parsed = schema.parse({ listing_id: formData.get('listing_id') });
+    const parsed = schema.parse({
+      listing_id: formData.get('listing_id'),
+      qty: formData.get('qty') ?? 1,
+    });
 
     const supabase = await createSupabaseServerClient();
     const {
@@ -41,6 +48,7 @@ export async function purchaseListingAction(formData: FormData) {
     const rpc = await callPurchaseListing({
       buyerId: user.id,
       listingId: parsed.listing_id,
+      qty: parsed.qty,
     });
 
     if (!rpc.ok) {
@@ -61,7 +69,8 @@ export async function purchaseListingAction(formData: FormData) {
     revalidatePath('/catalog');
     revalidatePath('/buy/orders');
     revalidatePath('/sell/listings');
-    return { action: 'purchased' as const, listing_id: parsed.listing_id };
+    // rpc.listing_id 는 분할된 자식 listing id (구매자의 주문 단위)
+    return { action: 'purchased' as const, listing_id: rpc.listing_id };
   });
 
   if (result.ok) {
@@ -78,14 +87,15 @@ export async function purchaseListingAction(formData: FormData) {
 /**
  * sendGiftFromListingAction — 에이전트 매물의 카탈로그 페이지에서 선물 발송.
  *
- * 흐름:
- *   1. listing 의 seller_id 가 agent 인지 검증
- *   2. agent 의 inventory 중 같은 sku_id, qty_available >= qty 인 행 선택 (가장 저렴한 unit_cost 우선)
- *   3. send_gift RPC 호출 — 발송자 cash 차감 + agent_inventory 감소 + gift 생성
+ * send_gift_from_listing RPC 가 atomic 으로 처리:
+ *   - listing.pre_verified=true 검증
+ *   - listing.quantity_remaining 차감
+ *   - inventory.qty_reserved 차감
+ *   - cash 차감 + gifts insert + 수령자 알림
  */
 const giftSchema = z.object({
   listing_id: z.string().uuid(),
-  recipient_nickname: z.string().trim().min(1, '받는 사람 닉네임을 입력하세요').max(40),
+  recipient_username: z.string().trim().min(1, '받는 사람 아이디를 입력하세요').max(40),
   qty: z.coerce.number().int().min(1).max(100),
   message: z.string().trim().max(200).optional().or(z.literal('')),
 });
@@ -95,7 +105,7 @@ export async function sendGiftFromListingAction(formData: FormData) {
     await requirePhoneVerified();
     const parsed = giftSchema.safeParse({
       listing_id: formData.get('listing_id'),
-      recipient_nickname: formData.get('recipient_nickname'),
+      recipient_username: formData.get('recipient_username'),
       qty: formData.get('qty'),
       message: formData.get('message') ?? '',
     });
@@ -106,60 +116,10 @@ export async function sendGiftFromListingAction(formData: FormData) {
     }
 
     const supabase = await createSupabaseServerClient();
-
-    // listing 조회 + agent role 확인
-    const { data: listing } = await supabase
-      .from('listing')
-      .select('id, seller_id, sku_id, unit_price, quantity_offered, status, pre_verified')
-      .eq('id', parsed.data.listing_id)
-      .maybeSingle<{
-        id: string;
-        seller_id: string;
-        sku_id: string;
-        unit_price: number;
-        quantity_offered: number;
-        status: string;
-        pre_verified: boolean;
-      }>();
-    if (!listing) {
-      throw Object.assign(new Error('매물을 찾을 수 없어요'), { code: 'NOT_FOUND' });
-    }
-    if (listing.status !== 'submitted') {
-      throw Object.assign(new Error('판매 가능한 매물이 아니에요'), { code: 'INVALID_STATE' });
-    }
-
-    const { data: agentRole } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', listing.seller_id)
-      .eq('role', 'agent')
-      .is('revoked_at', null)
-      .maybeSingle();
-    if (!agentRole) {
-      throw Object.assign(new Error('에이전트 매물만 선물할 수 있어요'), { code: 'NOT_AGENT' });
-    }
-
-    // 같은 에이전트의 inventory 에서 qty_available 충분한 row 선택 (가장 저렴한 단가 우선)
-    const { data: inv } = await supabase
-      .from('agent_inventory')
-      .select('id, qty_available, unit_cost')
-      .eq('agent_id', listing.seller_id)
-      .eq('sku_id', listing.sku_id)
-      .gte('qty_available', parsed.data.qty)
-      .order('unit_cost', { ascending: true })
-      .limit(1)
-      .maybeSingle<{ id: string; qty_available: number; unit_cost: number }>();
-    if (!inv) {
-      throw Object.assign(new Error('에이전트의 재고가 부족해요'), {
-        code: 'INVENTORY_INSUFFICIENT',
-      });
-    }
-
-    const giftId = await sendGift(supabase, {
-      recipientNickname: parsed.data.recipient_nickname,
-      inventoryId: inv.id,
+    const giftId = await sendGiftFromListing(supabase, {
+      recipientUsername: parsed.data.recipient_username,
+      listingId: parsed.data.listing_id,
       qty: parsed.data.qty,
-      unitPrice: listing.unit_price,
       message: parsed.data.message ? parsed.data.message : null,
     });
 
@@ -167,5 +127,41 @@ export async function sendGiftFromListingAction(formData: FormData) {
     revalidatePath('/account/gift');
     revalidatePath('/account/mileage');
     return { ok: true as const, gift_id: giftId };
+  });
+}
+
+/**
+ * 선물 받는 사람 아이디(username) 사전 검증 (on-blur).
+ *  - username 존재 여부 + 본인 여부만 반환. ID 등 메타데이터는 클라이언트로 전달 안 함.
+ */
+const lookupSchema = z.object({
+  username: z.string().trim().min(1).max(40),
+});
+
+export async function lookupGiftRecipientAction(formData: FormData) {
+  return withServerAction('lookupGiftRecipient', async () => {
+    await requirePhoneVerified();
+    const parsed = lookupSchema.safeParse({ username: formData.get('username') });
+    if (!parsed.success) {
+      return { ok: true as const, found: false, isSelf: false };
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      const err = new Error('UNAUTHENTICATED') as Error & { code?: string };
+      err.code = 'UNAUTHENTICATED';
+      throw err;
+    }
+
+    const found = await lookupUserByUsername(parsed.data.username);
+    if (!found) return { ok: true as const, found: false, isSelf: false };
+    return {
+      ok: true as const,
+      found: true,
+      isSelf: found.id === user.id,
+    };
   });
 }

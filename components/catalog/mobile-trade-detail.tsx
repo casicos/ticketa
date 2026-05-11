@@ -11,6 +11,7 @@ export interface MobileTradeDetailProps {
   listingId: string;
   dept: Department;
   displayName: string;
+  denomination: number;
   thumbnailUrl?: string | null;
   unitPrice: number;
   quantity: number;
@@ -21,6 +22,8 @@ export interface MobileTradeDetailProps {
   actionSlot: React.ReactNode;
   verified?: boolean;
   storeName?: string | null;
+  partialAllowed: boolean;
+  viewerIsAgent: boolean;
   className?: string;
 }
 
@@ -28,6 +31,7 @@ export function MobileTradeDetail({
   listingId,
   dept,
   displayName,
+  denomination,
   thumbnailUrl,
   unitPrice,
   quantity,
@@ -38,28 +42,34 @@ export function MobileTradeDetail({
   actionSlot,
   verified,
   storeName,
+  partialAllowed,
+  viewerIsAgent,
   className,
 }: MobileTradeDetailProps) {
+  const verb = viewerIsAgent ? '매입' : '구매';
   return (
     <div className={cn('md:hidden', className)}>
-      {/* Thumbnail */}
-      {thumbnailUrl && (
-        <div className="bg-muted/40 relative w-full px-6 py-4" style={{ aspectRatio: '1.6 / 1' }}>
-          <Image
-            src={thumbnailUrl}
-            alt={`${DEPARTMENT_LABEL[dept]} ${unitPrice.toLocaleString('ko-KR')}원권`}
-            fill
-            sizes="100vw"
-            className="object-contain p-2"
-          />
-        </div>
-      )}
       {/* Header card */}
       <div className="border-border border-b bg-white px-5 py-5">
         <div className="mb-3 flex items-center gap-2.5">
-          <DeptMark dept={dept} size={36} />
+          {thumbnailUrl ? (
+            <div className="border-warm-200 relative size-12 shrink-0 overflow-hidden rounded-[10px] border bg-white">
+              <Image
+                src={thumbnailUrl}
+                alt={`${DEPARTMENT_LABEL[dept]}백화점 ${denomination.toLocaleString('ko-KR')}원권`}
+                fill
+                sizes="48px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <DeptMark dept={dept} size={40} />
+          )}
           <div className="min-w-0 flex-1">
-            <div className="text-[14px] font-bold tracking-[-0.015em]">{displayName}</div>
+            <div className="text-muted-foreground text-[12px] font-bold">
+              {DEPARTMENT_LABEL[dept]}백화점 상품권
+            </div>
+            <div className="text-[15px] font-bold tracking-[-0.015em]">{displayName}</div>
           </div>
           {verified && <VerifiedBadge size="sm" />}
         </div>
@@ -79,35 +89,42 @@ export function MobileTradeDetail({
             </div>
             <div className="min-w-0 flex-1">
               <StoreNameLabel name={storeName} size="sm" />
-              <div className="text-warm-700 mt-0.5 text-[11px]">에이전트 직영 매물</div>
+              <div className="text-warm-700 mt-0.5 text-[12px]">에이전트 직영 매물</div>
             </div>
           </div>
         )}
         <div className="border-border flex items-baseline gap-2 border-t pt-3">
           <MoneyDisplay value={unitPrice} size="lg" />
-          {quantity > 1 && (
-            <span className="text-muted-foreground text-[14px] font-semibold">
-              × {quantity}장 = {formatKRW(gross)}
-            </span>
-          )}
+          <span className="text-muted-foreground text-[14px] font-semibold">
+            / 매 · 남은 {quantity.toLocaleString('ko-KR')}장
+            {!partialAllowed && quantity > 1 && (
+              <span className="text-warm-700"> · 전량 {formatKRW(gross)}</span>
+            )}
+          </span>
         </div>
-      </div>
-
-      {/* Dept label */}
-      <div className="text-muted-foreground px-5 py-3 text-[13px]">
-        {DEPARTMENT_LABEL[dept]} 백화점 상품권
+        {partialAllowed && (
+          <p className="text-warm-700 mt-1.5 text-[12px]">에이전트 매물 — 1매부터 {verb} 가능</p>
+        )}
       </div>
 
       {/* Bottom action bar */}
       <div className="border-border fixed right-0 bottom-0 left-0 border-t bg-white px-4 pt-3 pb-4">
         <div className="mb-2.5 flex justify-between text-[14px]">
-          <span className="text-muted-foreground">총 결제 (수수료 포함)</span>
-          <span className="font-bold tabular-nums">{formatKRW(gross)}</span>
+          <span className="text-muted-foreground">
+            {partialAllowed ? `최소 ${verb}가 (1매)` : `전량 ${verb}가`}
+          </span>
+          <span className="font-bold tabular-nums">
+            {formatKRW(partialAllowed ? unitPrice : gross)}
+          </span>
         </div>
         {canBuy ? (
           !hasEnough ? (
             <div className="bg-warning/10 rounded-lg p-3 text-[14px]">
-              <p className="font-semibold">마일리지가 {formatKRW(shortage)} 부족해요.</p>
+              <p className="font-semibold">
+                {partialAllowed
+                  ? `1매 단가 ${formatKRW(unitPrice)} 도 부족해요`
+                  : `마일리지가 ${formatKRW(shortage)} 부족해요`}
+              </p>
             </div>
           ) : (
             actionSlot
@@ -117,7 +134,7 @@ export function MobileTradeDetail({
             disabled
             className="bg-muted text-muted-foreground h-[50px] w-full cursor-not-allowed rounded-xl text-[14px] font-bold"
           >
-            에이전트 권한 필요
+            휴대폰 인증 후 {verb} 가능
           </button>
         )}
       </div>

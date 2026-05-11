@@ -29,6 +29,21 @@ export async function createAgentListingAction(formData: FormData) {
     }
 
     const supabase = await createSupabaseServerClient();
+
+    // 정산 단가 이상이어야 함 (플랫폼 손실 방지)
+    const { data: inv } = await supabase
+      .from('agent_inventory')
+      .select('unit_cost')
+      .eq('id', parsed.data.inventory_id)
+      .eq('agent_id', user.id)
+      .maybeSingle<{ unit_cost: number }>();
+    if (inv && parsed.data.unit_price < inv.unit_cost) {
+      throw Object.assign(
+        new Error(`판매가는 정산 단가 ${inv.unit_cost.toLocaleString('ko-KR')}원 이상이어야 해요`),
+        { code: 'PRICE_BELOW_COST' },
+      );
+    }
+
     const { data, error } = await supabase.rpc('create_agent_listing', {
       p_agent: user.id,
       p_inventory: parsed.data.inventory_id,

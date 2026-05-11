@@ -31,9 +31,17 @@ export const skuUpdateSchema = skuCreateSchema.partial().extend({
   id: z.string().uuid('유효하지 않은 ID 입니다'),
 });
 
+// z.coerce.boolean() 은 'false' 문자열을 true 로 변환하는 함정이 있어 직접 파싱.
+const strictBool = z.preprocess((v) => {
+  if (typeof v === 'boolean') return v;
+  if (typeof v === 'string') return v === 'true' || v === '1';
+  if (typeof v === 'number') return v === 1;
+  return v;
+}, z.boolean());
+
 export const skuToggleSchema = z.object({
   id: z.string().uuid('유효하지 않은 ID 입니다'),
-  is_active: z.coerce.boolean(),
+  is_active: strictBool,
 });
 
 export type SkuCreate = z.infer<typeof skuCreateSchema>;

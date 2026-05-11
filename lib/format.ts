@@ -3,6 +3,57 @@ export function formatKRW(amount: number | null | undefined): string {
   return `${amount.toLocaleString('ko-KR')}원`;
 }
 
+const KOR_DIGITS = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'] as const;
+const KOR_SUB_UNITS = ['', '십', '백', '천'] as const; // ones · tens · hundreds · thousands
+const KOR_LARGE_UNITS = ['', '만', '억', '조'] as const;
+
+function group4Korean(n: number): string {
+  // n: 0..9999
+  let s = '';
+  const digits = [
+    Math.floor(n / 1000) % 10,
+    Math.floor(n / 100) % 10,
+    Math.floor(n / 10) % 10,
+    n % 10,
+  ];
+  for (let i = 0; i < 4; i++) {
+    const d = digits[i]!;
+    if (d === 0) continue;
+    const unit = KOR_SUB_UNITS[3 - i]!;
+    // 십/백/천 앞의 1 은 생략 ("일십" 대신 "십")
+    if (d === 1 && unit) s += unit;
+    else s += KOR_DIGITS[d]! + unit;
+  }
+  return s;
+}
+
+/**
+ * 정수를 한국어 한자식 읽기로 변환. 양의 정수에 한해 동작.
+ *   500000 → "오십만"
+ *   1234567 → "백이십삼만사천오백육십칠"
+ *   10000 → "만" (관용적으로 "일만" 생략)
+ */
+export function koreanNumberWord(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n) || n < 0) return '';
+  let num = Math.floor(n);
+  if (num === 0) return '영';
+
+  const parts: string[] = [];
+  let unitIdx = 0;
+  while (num > 0 && unitIdx < KOR_LARGE_UNITS.length) {
+    const group = num % 10000;
+    if (group > 0) {
+      let s = group4Korean(group);
+      // 일만 → 만, 일억 → 억 (상위 단위 앞의 단순 1 생략)
+      if (s === '일' && unitIdx > 0) s = '';
+      parts.unshift(s + KOR_LARGE_UNITS[unitIdx]!);
+    }
+    num = Math.floor(num / 10000);
+    unitIdx++;
+  }
+  return parts.join('');
+}
+
 export function formatDate(input: string | Date | null | undefined): string {
   if (!input) return '-';
   const d = typeof input === 'string' ? new Date(input) : input;
@@ -57,6 +108,54 @@ export function formatKoreanPhone(phone: string | null | undefined): string {
     return `${digits.slice(0, 3)}-${digits.slice(3, digits.length - 4)}-${digits.slice(-4)}`;
   }
   return digits;
+}
+
+/**
+ * 마일리지 원장 memo 를 일반 사용자에게 보기 좋게 정리.
+ *  - ` [cash bucket]` / ` [pg bucket]` 접미사 제거 (DB 내부 분기 표식, bucket 컬럼에 이미 있음)
+ *  - `listing=<uuid>` 등 UUID 토큰 제거
+ *  - 패턴별로 한국어화: `매입: qty=2` → `매입 2매`, `취소 환불: reason=X` → `취소 환불 — X`
+ */
+export function formatLedgerMemo(
+  memo: string | null | undefined,
+  fallback?: string | null,
+): string {
+  if (!memo || !memo.trim()) return fallback ?? '';
+  let s = memo;
+
+  // 버킷 접미사 제거
+  s = s.replace(/\s*\[(cash|pg) bucket\]\s*/g, '').trim();
+
+  // listing=<uuid> 토큰 제거
+  s = s.replace(/\s*listing=[0-9a-f-]{8,}\b/gi, '').trim();
+
+  // 매입 패턴 정규화
+  const purchaseMatch = s.match(/^매입\s*:?\s*(.*)$/);
+  if (purchaseMatch) {
+    const tail = purchaseMatch[1] ?? '';
+    const qtyMatch = tail.match(/qty=(\d+)/i);
+    if (qtyMatch) {
+      return `매입 ${Number(qtyMatch[1]).toLocaleString('ko-KR')}매`;
+    }
+    if (!tail.trim()) return '매입';
+  }
+
+  // 취소 환불 패턴 정규화 — reason= 만 남기고 깔끔하게
+  const cancelMatch = s.match(/^취소\s*환불\s*:?\s*(.*)$/);
+  if (cancelMatch) {
+    const tail = (cancelMatch[1] ?? '').trim();
+    const reasonMatch = tail.match(/reason=(.+)$/i);
+    const reason = reasonMatch ? reasonMatch[1]!.trim() : tail.replace(/^reason=/i, '').trim();
+    if (reason) return `취소 환불 — ${reason}`;
+    return '취소 환불';
+  }
+
+  // qty=N 단독 잔여 토큰 제거
+  s = s.replace(/\s*qty=\d+\b/gi, '').trim();
+  // 콜론으로 끝나는 경우 정리
+  s = s.replace(/[:：]\s*$/g, '').trim();
+
+  return s || (fallback ?? '');
 }
 
 /** 국내 포맷 + 가운데 4자리 마스킹. 예: `010-****-5678`. */

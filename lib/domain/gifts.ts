@@ -34,6 +34,33 @@ export async function sendGift(
   return data as string;
 }
 
+/**
+ * send_gift_from_listing RPC wrapper.
+ * 에이전트 listing 의 quantity_remaining 과 inventory.qty_reserved 를 같이 차감하는 atomic.
+ *  - listing.pre_verified=true 만 허용
+ *  - 수령자는 username(사용자 아이디) 기준
+ *  - 발송자 cash 차감 + listing.quantity_remaining -= qty + inventory.qty_reserved -= qty
+ *    + gifts insert + 수령자 알림
+ */
+export async function sendGiftFromListing(
+  supabase: SupabaseClient,
+  input: {
+    recipientUsername: string;
+    listingId: string;
+    qty: number;
+    message: string | null;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc('send_gift_from_listing', {
+    p_recipient_username: input.recipientUsername,
+    p_listing_id: input.listingId,
+    p_qty: input.qty,
+    p_message: input.message,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
 /** 수령자 마일리지 수령 — silent (발송자에게 알림 안 감) */
 export async function claimGiftMileage(supabase: SupabaseClient, giftId: string): Promise<void> {
   const { error } = await supabase.rpc('claim_gift_mileage', { p_gift_id: giftId });
