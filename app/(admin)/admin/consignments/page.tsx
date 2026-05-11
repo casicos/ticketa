@@ -1,52 +1,21 @@
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { hasRole } from '@/lib/auth/guards';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AdminPageHead, AdminKpi } from '@/components/admin/admin-shell';
 import { R2Pill, R2TableHead } from '@/components/admin/r2';
 import { DeptMark, type Department } from '@/components/ticketa/dept-mark';
+import { fetchConsignmentData } from '@/lib/domain/admin/consignments';
 import {
   ConsignmentForm,
   type AgentOption,
   type SkuOption,
   type ExistingInventoryRow,
 } from './consignment-form';
+import { ReleaseConsignmentButton } from './release-button';
+import { EditUnitCostButton } from './edit-unit-cost-button';
 
 // "기존 행 합산" 배지 — updated_at vs created_at 차이로 추정 (적재 후 update 이력 있으면 merged)
 // 사이드 시트 (행 → 에이전트 inventory drill) — 지원 예정
-
-type AgentRoleRow = {
-  user_id: string;
-  user: {
-    id: string;
-    username: string | null;
-    full_name: string | null;
-    store_name: string | null;
-  } | null;
-};
-
-type SkuRow = {
-  id: string;
-  brand: string;
-  denomination: number;
-  display_name: string;
-  is_active: boolean;
-};
-
-type RecentInventoryRow = {
-  id: string;
-  qty_available: number;
-  qty_reserved: number;
-  unit_cost: number;
-  created_at: string;
-  updated_at: string;
-  agent: {
-    id: string;
-    username: string | null;
-    full_name: string | null;
-    store_name: string | null;
-  } | null;
-  sku: { id: string; brand: string; denomination: number; display_name: string } | null;
-};
 
 type AgentRanking = {
   id: string;
@@ -57,13 +26,19 @@ type AgentRanking = {
   value: number;
 };
 
-const BRAND_LABEL: Record<string, string> = {
-  lotte: '롯데',
-  hyundai: '현대',
-  shinsegae: '신세계',
-  galleria: '갤러리아',
-  ak: 'AK',
+// DB brand("AK백화점") → DeptMark 키 + 짧은 라벨
+const BRAND_TO_DEPT: Record<string, Department> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
 };
+
+function shortBrandLabel(brand: string): string {
+  const stripped = brand.replace(/백화점$/, '').trim();
+  return stripped || brand;
+}
 
 function formatRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -76,46 +51,18 @@ function formatRelative(iso: string) {
   return new Date(iso).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
 }
 
-async function loadConsignmentData() {
-  const supabase = await createSupabaseServerClient();
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  return { supabase, thirtyDaysAgo };
-}
-
 export default async function AdminConsignmentsPage() {
   const ok = await hasRole('admin');
   if (!ok) redirect('/no-access?reason=admin-required');
 
-  const { supabase, thirtyDaysAgo } = await loadConsignmentData();
+  const {
+    agentRows,
+    skus: skuRows,
+    recent: rows,
+    monthly,
+    allInventory,
+  } = await fetchConsignmentData();
 
-  const [agentsRes, skusRes, recentRes, monthlyRes] = await Promise.all([
-    supabase
-      .from('user_roles')
-      .select('user_id, user:user_id(id, username, full_name, store_name)')
-      .eq('role', 'agent')
-      .is('revoked_at', null),
-    supabase
-      .from('sku')
-      .select('id, brand, denomination, display_name, is_active')
-      .eq('is_active', true)
-      .order('brand', { ascending: true })
-      .order('denomination', { ascending: false }),
-    supabase
-      .from('agent_inventory')
-      .select(
-        'id, qty_available, qty_reserved, unit_cost, created_at, updated_at, agent:agent_id(id, username, full_name, store_name), sku:sku_id(id, brand, denomination, display_name)',
-      )
-      .order('updated_at', { ascending: false })
-      .limit(20),
-    supabase
-      .from('agent_inventory')
-      .select('qty_available, qty_reserved, unit_cost, agent_id, created_at')
-      .gte('created_at', thirtyDaysAgo),
-  ]);
-
-  const agentRows = ((agentsRes.data ?? []) as unknown as AgentRoleRow[]).filter(
-    (r) => r.user !== null,
-  );
   const agents: AgentOption[] = agentRows.map((r) => {
     const u = r.user!;
     const name = u.store_name || u.full_name || u.username || u.id.slice(0, 8);
@@ -128,30 +75,23 @@ export default async function AdminConsignmentsPage() {
     };
   });
 
-  const skus: SkuOption[] = ((skusRes.data ?? []) as SkuRow[]).map((s) => ({
+  const skus: SkuOption[] = skuRows.map((s) => ({
     id: s.id,
     brand: s.brand,
     denomination: s.denomination,
     display_name: s.display_name,
-    code: `${s.brand.slice(0, 2).toUpperCase()}-${String(s.denomination / 10000).padStart(2, '0')}`,
+    thumbnail_url: s.thumbnail_url,
+    code: `${shortBrandLabel(s.brand)}-${String(s.denomination / 10000).padStart(2, '0')}`,
   }));
 
-  const rows = (recentRes.data ?? []) as unknown as RecentInventoryRow[];
-
-  // 30일 적재 총액 (created_at 기준 신규 적재만)
-  const monthlyTotal = (
-    (monthlyRes.data ?? []) as { qty_available: number; qty_reserved: number; unit_cost: number }[]
-  ).reduce((s, r) => s + (r.qty_available + r.qty_reserved) * r.unit_cost, 0);
+  // 30일 적재 총액 (created_at 기준)
+  const monthlyTotal = monthly.reduce(
+    (s, r) => s + (r.qty_available + r.qty_reserved) * r.unit_cost,
+    0,
+  );
 
   const totalAgents = agents.length;
   const totalSkus = skus.length;
-
-  // 폼 BEFORE/AFTER 미리보기 + 상위 5 에이전트 — 같은 fetch 재사용
-  const allInventory = ((
-    await supabase
-      .from('agent_inventory')
-      .select('id, agent_id, sku_id, qty_available, qty_reserved, unit_cost')
-  ).data ?? []) as ExistingInventoryRow[];
 
   const existingInventory: ExistingInventoryRow[] = allInventory;
 
@@ -188,7 +128,7 @@ export default async function AdminConsignmentsPage() {
     <>
       <AdminPageHead
         title="위탁 입고"
-        sub="에이전트 위탁 상품권 적재 — 동일 (에이전트·권종·단가) 면 기존 행에 합산"
+        sub="에이전트가 맡긴 상품권을 받아 재고로 등록합니다. 같은 에이전트·권종·정산 단가면 기존 재고에 자동 합산돼요."
       />
 
       <div className="mb-4 grid grid-cols-3 gap-3">
@@ -213,10 +153,10 @@ export default async function AdminConsignmentsPage() {
         <div className="border-border rounded-[12px] border bg-white p-4">
           <div className="mb-3 flex items-center">
             <span className="text-[14px] font-extrabold">에이전트 보유 현황</span>
-            <span className="text-muted-foreground ml-auto text-[12px]">상위 5명</span>
+            <span className="text-muted-foreground ml-auto text-[13px]">상위 5명</span>
           </div>
           {topAgents.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center text-[13px]">
+            <div className="text-muted-foreground py-8 text-center text-[14px]">
               아직 적재된 에이전트가 없어요.
             </div>
           ) : (
@@ -228,24 +168,24 @@ export default async function AdminConsignmentsPage() {
                   style={{ borderTop: i > 0 ? '1px solid var(--warm-100)' : 0 }}
                 >
                   <div
-                    className="flex size-8 items-center justify-center rounded-[8px] text-[13px] font-extrabold text-white"
+                    className="flex size-8 items-center justify-center rounded-[8px] text-[14px] font-extrabold text-white"
                     style={{ background: 'linear-gradient(135deg, #D4A24C, #B6862E)' }}
                   >
                     {a.name[0]}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-bold tracking-[-0.008em]">
+                    <div className="truncate text-[14px] font-bold tracking-[-0.008em]">
                       {a.name}
                     </div>
-                    <div className="text-muted-foreground text-[11px] tabular-nums">
+                    <div className="text-muted-foreground text-[12px] tabular-nums">
                       보유 <b className="text-foreground">{a.pool.toLocaleString('ko-KR')}</b> ·
                       판매중 <b style={{ color: '#8C6321' }}>{a.listed}</b>
                     </div>
                   </div>
                   <div className="text-right tabular-nums">
-                    <div className="text-[13px] font-extrabold">
+                    <div className="text-[14px] font-extrabold">
                       {Math.round(a.value / 10000).toLocaleString('ko-KR')}
-                      <span className="text-muted-foreground ml-0.5 text-[11px] font-bold">
+                      <span className="text-muted-foreground ml-0.5 text-[12px] font-bold">
                         만원
                       </span>
                     </div>
@@ -261,8 +201,8 @@ export default async function AdminConsignmentsPage() {
       <div className="border-border overflow-hidden rounded-[12px] border bg-white">
         <div className="border-border flex items-center border-b px-4 py-3.5">
           <span className="text-[14px] font-extrabold">최근 적재 내역</span>
-          <span className="text-muted-foreground ml-2.5 text-[12px]">최신순 (자동 정렬)</span>
-          <span className="text-muted-foreground ml-auto inline-flex items-center gap-1.5 text-[11px]">
+          <span className="text-muted-foreground ml-2.5 text-[13px]">최신순 (자동 정렬)</span>
+          <span className="text-muted-foreground ml-auto inline-flex items-center gap-1.5 text-[12px]">
             행 drill-down
             <R2Pill tone="neutral">지원 예정</R2Pill>
           </span>
@@ -274,7 +214,15 @@ export default async function AdminConsignmentsPage() {
         ) : (
           <table className="w-full border-collapse text-[14px]">
             <R2TableHead
-              cols={['에이전트', '권종', '보유 / 판매중', '단가', '총 위탁가', '갱신', '']}
+              cols={[
+                '에이전트',
+                '권종',
+                '보유 / 판매중',
+                '정산 단가',
+                '정산 예정액',
+                '갱신',
+                '액션',
+              ]}
             />
             <tbody>
               {rows.map((r) => {
@@ -284,7 +232,9 @@ export default async function AdminConsignmentsPage() {
                   r.agent?.username ||
                   r.agent?.id.slice(0, 8) ||
                   '알 수 없음';
-                const skuBrand = (r.sku?.brand ?? 'lotte') as Department;
+                const skuBrand = r.sku?.brand ?? '';
+                const dept = BRAND_TO_DEPT[skuBrand];
+                const skuThumb = r.sku?.thumbnail_url ?? null;
                 const total = r.qty_available + r.qty_reserved;
                 const merged =
                   new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() > 60_000;
@@ -293,19 +243,31 @@ export default async function AdminConsignmentsPage() {
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
                         <div
-                          className="flex size-6 items-center justify-center rounded-[6px] text-[11px] font-extrabold text-white"
+                          className="flex size-6 items-center justify-center rounded-[6px] text-[12px] font-extrabold text-white"
                           style={{ background: 'linear-gradient(135deg, #D4A24C, #B6862E)' }}
                         >
                           {agentName[0]}
                         </div>
-                        <span className="text-[13px] font-bold">{agentName}</span>
+                        <span className="text-[14px] font-bold">{agentName}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
-                        <DeptMark dept={skuBrand} size={24} />
-                        <span className="text-[13px] font-bold">
-                          {BRAND_LABEL[skuBrand] ?? skuBrand}{' '}
+                        {skuThumb ? (
+                          <div className="border-warm-200 relative size-6 shrink-0 overflow-hidden rounded-[6px] border bg-white">
+                            <Image
+                              src={skuThumb}
+                              alt={r.sku?.display_name ?? ''}
+                              fill
+                              sizes="24px"
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : dept ? (
+                          <DeptMark dept={dept} size={24} />
+                        ) : null}
+                        <span className="text-[14px] font-bold">
+                          {shortBrandLabel(skuBrand)}{' '}
                           {((r.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권
                         </span>
                       </div>
@@ -324,12 +286,28 @@ export default async function AdminConsignmentsPage() {
                       {(total * r.unit_cost).toLocaleString('ko-KR')}원
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="text-muted-foreground text-[12px]">
+                      <div className="text-muted-foreground text-[13px]">
                         {formatRelative(r.updated_at)}
                       </div>
-                      {merged && <R2Pill tone="progress">기존 행 합산</R2Pill>}
+                      {merged && <R2Pill tone="progress">기존 재고에 합산</R2Pill>}
                     </td>
-                    <td className="text-muted-foreground px-4 py-3.5 text-right text-[12px]">—</td>
+                    <td className="px-4 py-3.5 text-right">
+                      <div className="inline-flex items-center gap-1.5">
+                        <EditUnitCostButton
+                          inventoryId={r.id}
+                          currentUnitCost={r.unit_cost}
+                          qtyReserved={r.qty_reserved}
+                          agentName={agentName}
+                          skuLabel={`${shortBrandLabel(skuBrand)} ${((r.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권`}
+                        />
+                        <ReleaseConsignmentButton
+                          inventoryId={r.id}
+                          qtyAvailable={r.qty_available}
+                          agentName={agentName}
+                          skuLabel={`${shortBrandLabel(skuBrand)} ${((r.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 · 정산 단가 ${r.unit_cost.toLocaleString('ko-KR')}원`}
+                        />
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -338,9 +316,9 @@ export default async function AdminConsignmentsPage() {
         )}
       </div>
 
-      <p className="text-muted-foreground mt-4 text-[12px]">
-        동일 (에이전트 · 권종 · 단가) 조합으로 적재하면 기존 행의 보유 수량이 증가해요. 단가가
-        다르면 새 행으로 분리됩니다.
+      <p className="text-muted-foreground mt-4 text-[13px]">
+        같은 에이전트 · 권종 · 정산 단가로 다시 입고하면 기존 위탁 재고에 수량만 더해져요. 정산
+        단가가 다르면 별도 재고로 분리됩니다.
       </p>
     </>
   );

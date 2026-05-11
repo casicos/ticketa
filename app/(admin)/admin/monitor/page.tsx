@@ -1,32 +1,21 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AdminPageHead, AdminKpi } from '@/components/admin/admin-shell';
 import { R2Pill } from '@/components/admin/r2';
 import { shortId } from '@/lib/format';
 import type { ListingStatus } from '@/lib/domain/listings';
+import {
+  fetchActiveListings,
+  fetchTodayCounts,
+  type MonitorListing,
+} from '@/lib/domain/admin/monitor';
 import { DashboardRefreshButton } from '../dashboard-refresh-button';
 
 // NOTE: '알림 발송' 액션은 state machine 진행 시 자동 발송과 중복 위험 → "지원 예정".
 //       '개입' = 단계별 transition → /admin/intake?tab=<status> 로 이동.
 //       실시간 자동 갱신은 수동 새로고침 버튼으로 대체.
 
-type StuckRow = {
-  id: string;
-  status: ListingStatus;
-  unit_price: number;
-  quantity_offered: number;
-  purchased_at: string | null;
-  handed_over_at: string | null;
-  received_at: string | null;
-  verified_at: string | null;
-  shipped_at: string | null;
-  seller_id: string;
-  buyer_id: string | null;
-  seller: { full_name: string | null; username: string | null; store_name: string | null } | null;
-  buyer: { full_name: string | null; username: string | null } | null;
-  sku: { brand: string; denomination: number; display_name: string } | null;
-};
+type StuckRow = MonitorListing;
 
 const STAGE_DEFS: {
   key: string;
@@ -84,20 +73,8 @@ function formatStuckTime(hours: number): string {
 }
 
 export default async function AdminMonitorPage() {
-  const supabase = await createSupabaseServerClient();
-
-  // 각 단계별 카운트
   const stageStatuses = STAGE_DEFS.flatMap((s) => s.statuses);
-  const { data: activeRows } = await supabase
-    .from('listing')
-    .select(
-      'id, status, unit_price, quantity_offered, purchased_at, handed_over_at, received_at, verified_at, shipped_at, seller_id, buyer_id, seller:seller_id(full_name, username, store_name), buyer:buyer_id(full_name, username), sku:sku_id(brand, denomination, display_name)',
-    )
-    .in('status', stageStatuses)
-    .order('created_at', { ascending: false })
-    .limit(200);
-
-  const activeListings = (activeRows ?? []) as unknown as StuckRow[];
+  const activeListings = await fetchActiveListings(stageStatuses);
 
   // 정체 거래 (각 stage stuck threshold 초과)
   const stuck: (StuckRow & {
@@ -127,23 +104,7 @@ export default async function AdminMonitorPage() {
   // KPI
   const totalActive = activeListings.length;
   const totalStuck = stuck.length;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [{ count: todayCompleted }, { count: todayCancelled }] = await Promise.all([
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'completed')
-      .gte('completed_at', today.toISOString()),
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'cancelled')
-      .gte('cancelled_at', today.toISOString()),
-  ]);
-
-  const completedToday = todayCompleted ?? 0;
-  const cancelledToday = todayCancelled ?? 0;
+  const { completedToday, cancelledToday } = await fetchTodayCounts();
   const successRate =
     completedToday + cancelledToday > 0
       ? ((completedToday / (completedToday + cancelledToday)) * 100).toFixed(1)
@@ -156,7 +117,7 @@ export default async function AdminMonitorPage() {
         sub="실시간 진행 거래 — 각 단계별 정체 / 자동 알림"
         right={
           <div className="flex items-center gap-2.5">
-            <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[13px]">
+            <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[14px]">
               <span
                 className="size-1.5 rounded-full"
                 style={{
@@ -196,24 +157,23 @@ export default async function AdminMonitorPage() {
       <div className="border-border mb-4 rounded-[12px] border bg-white p-5">
         <div className="mb-4 flex items-center">
           <div className="text-[15px] font-extrabold">거래 단계별 분포</div>
-          <span className="text-muted-foreground ml-auto text-[13px] tabular-nums">
+          <span className="text-muted-foreground ml-auto text-[14px] tabular-nums">
             진행 {totalActive}건 · 정체 {totalStuck}건
           </span>
         </div>
         <div className="flex items-stretch gap-2">
           {stageCounts.map((s, i) => {
             const isHotspot = s.stuck > 0;
-            const isInspect = s.key === 'inspect';
             return (
               <Fragment key={s.key}>
                 <div
                   className="flex flex-1 flex-col gap-1.5 rounded-[10px] border p-3.5"
                   style={{
-                    background: isInspect ? 'var(--ticketa-blue-50)' : 'var(--warm-50)',
-                    borderColor: isInspect ? '#5BA3D0' : 'var(--border)',
+                    background: 'var(--warm-50)',
+                    borderColor: 'var(--border)',
                   }}
                 >
-                  <div className="text-muted-foreground text-[11px] font-extrabold tracking-[0.06em] uppercase">
+                  <div className="text-muted-foreground text-[12px] font-extrabold tracking-[0.06em] uppercase">
                     {i + 1}단계
                   </div>
                   <div className="text-[14px] font-extrabold tracking-[-0.012em]">{s.label}</div>
@@ -222,7 +182,7 @@ export default async function AdminMonitorPage() {
                       {s.count.toLocaleString('ko-KR')}
                     </span>
                     {isHotspot && (
-                      <span className="text-destructive text-[12px] font-extrabold">
+                      <span className="text-destructive text-[13px] font-extrabold">
                         {s.stuck} 정체
                       </span>
                     )}
@@ -257,16 +217,16 @@ export default async function AdminMonitorPage() {
         >
           <span className="text-[15px] font-extrabold">정체된 거래</span>
           <span
-            className="text-destructive inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-extrabold"
+            className="text-destructive inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-extrabold"
             style={{ background: 'rgba(199,73,55,0.10)' }}
           >
             <span className="bg-destructive size-1.5 rounded-full" />
             {totalStuck}건
           </span>
-          <span className="text-muted-foreground text-[13px]">
+          <span className="text-muted-foreground text-[14px]">
             · 단계별 SLA 초과 (12~72시간 기준)
           </span>
-          <span className="text-muted-foreground ml-auto inline-flex items-center gap-1.5 text-[12px]">
+          <span className="text-muted-foreground ml-auto inline-flex items-center gap-1.5 text-[13px]">
             전체 알림 발송
             <R2Pill tone="neutral">지원 예정</R2Pill>
           </span>
@@ -283,7 +243,7 @@ export default async function AdminMonitorPage() {
                   (h) => (
                     <th
                       key={h}
-                      className="text-muted-foreground px-3 py-2.5 text-left text-[12px] font-extrabold tracking-[0.06em] uppercase"
+                      className="text-muted-foreground px-3 py-2.5 text-left text-[13px] font-extrabold tracking-[0.06em] uppercase"
                     >
                       {h}
                     </th>
@@ -303,11 +263,11 @@ export default async function AdminMonitorPage() {
                 const isAgent = !!r.seller?.store_name;
                 return (
                   <tr key={r.id} className="border-warm-100 border-t">
-                    <td className="px-3 py-3 font-mono text-[13px] font-bold">{shortId(r.id)}</td>
-                    <td className="px-3 py-3 text-[13px] font-bold">{r.stageLabel}</td>
+                    <td className="px-3 py-3 font-mono text-[14px] font-bold">{shortId(r.id)}</td>
+                    <td className="px-3 py-3 text-[14px] font-bold">{r.stageLabel}</td>
                     <td className="px-3 py-3">
                       <span
-                        className="text-[13px] font-extrabold tabular-nums"
+                        className="text-[14px] font-extrabold tabular-nums"
                         style={{ color: riskColor }}
                       >
                         {formatStuckTime(r.stuckHours)}
@@ -316,27 +276,27 @@ export default async function AdminMonitorPage() {
                     <td className="px-3 py-3 font-bold tabular-nums">
                       {total.toLocaleString('ko-KR')}원
                     </td>
-                    <td className="px-3 py-3 text-[13px]">
+                    <td className="px-3 py-3 text-[14px]">
                       {r.buyer?.full_name || r.buyer?.username || '—'}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1.5">
                         {isAgent && (
                           <span
-                            className="rounded-[3px] px-1 py-0.5 text-[10px] font-extrabold tracking-[0.06em] text-white"
+                            className="rounded-[3px] px-1 py-0.5 text-[12px] font-extrabold tracking-[0.06em] text-white"
                             style={{ background: 'linear-gradient(135deg, #D4A24C, #B6862E)' }}
                           >
                             AGENT
                           </span>
                         )}
-                        <span className="text-[13px]">
+                        <span className="text-[14px]">
                           {r.seller?.store_name || r.seller?.full_name || r.seller?.username || '—'}
                         </span>
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-extrabold"
+                        className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-extrabold"
                         style={{
                           color:
                             r.risk === 'urgent'
@@ -374,7 +334,7 @@ export default async function AdminMonitorPage() {
                               ? `/admin/intake?tab=${r.status}`
                               : '/admin/intake'
                           }
-                          className="bg-ticketa-blue-500 inline-flex h-7 cursor-pointer items-center rounded-[6px] px-2.5 text-[12px] font-extrabold text-white no-underline hover:opacity-90"
+                          className="bg-ticketa-blue-500 inline-flex h-7 cursor-pointer items-center rounded-[6px] px-2.5 text-[13px] font-extrabold text-white no-underline hover:opacity-90"
                         >
                           개입 →
                         </Link>

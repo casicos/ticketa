@@ -1,34 +1,24 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import Image from 'next/image';
 import { AdminPageHead } from '@/components/admin/admin-shell';
 import { R2Pill, R2TabBar, type R2TabItem } from '@/components/admin/r2';
 import { DeptMark, type Department } from '@/components/ticketa/dept-mark';
 import { shortId } from '@/lib/format';
-import { LISTING_STATUS_LABELS, type ListingStatus } from '@/lib/domain/listings';
+import { LISTING_STATUS_LABELS } from '@/lib/domain/listings';
+import { fetchCancellations } from '@/lib/domain/admin/cancellations';
 import { ApproveCancellationButton, RejectCancellationButton } from './cancellation-actions';
 
-type CancellationRow = {
-  id: number;
-  listing_id: string;
-  requested_by: string;
-  role_at_request: 'seller' | 'buyer';
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-  requested_at: string;
-  resolved_at: string | null;
-  admin_memo: string | null;
-  requester: {
-    full_name: string | null;
-    username: string | null;
-    store_name: string | null;
-  } | null;
-  listing: {
-    id: string;
-    status: ListingStatus;
-    unit_price: number;
-    quantity_offered: number;
-    sku: { brand: string; denomination: number; display_name: string } | null;
-  } | null;
+const BRAND_TO_DEPT: Record<string, Department> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
 };
+
+function shortBrandLabel(brand: string): string {
+  const stripped = brand.replace(/백화점$/, '').trim();
+  return stripped || brand;
+}
 
 const TAB_DEFS: { id: string; label: string }[] = [
   { id: 'pending', label: '대기' },
@@ -50,13 +40,6 @@ function formatTime(iso: string): string {
   });
 }
 
-const SELECT = `
-  id, listing_id, requested_by, role_at_request, reason, status,
-  requested_at, resolved_at, admin_memo,
-  requester:requested_by(full_name, username, store_name),
-  listing:listing_id(id, status, unit_price, quantity_offered, sku:sku_id(brand, denomination, display_name))
-` as const;
-
 export default async function AdminCancellationsPage({
   searchParams,
 }: {
@@ -66,25 +49,7 @@ export default async function AdminCancellationsPage({
   const rawTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const tabId = TAB_DEFS.find((t) => t.id === rawTab)?.id ?? 'pending';
 
-  const supabase = await createSupabaseServerClient();
-
-  const [pendingRes, doneRes] = await Promise.all([
-    supabase
-      .from('cancellation_requests')
-      .select(SELECT)
-      .eq('status', 'pending')
-      .order('requested_at', { ascending: true })
-      .limit(50),
-    supabase
-      .from('cancellation_requests')
-      .select(SELECT)
-      .in('status', ['approved', 'rejected'])
-      .order('resolved_at', { ascending: false })
-      .limit(20),
-  ]);
-
-  const pending = (pendingRes.data ?? []) as unknown as CancellationRow[];
-  const done = (doneRes.data ?? []) as unknown as CancellationRow[];
+  const { pending, done } = await fetchCancellations();
 
   const tabs: R2TabItem[] = TAB_DEFS.map((t) => ({
     id: t.id,
@@ -118,8 +83,13 @@ export default async function AdminCancellationsPage({
             const sla = Math.floor(hoursAgo(c.requested_at));
             const breach = c.status === 'pending' && sla >= SLA_HOURS;
             const sku = c.listing?.sku;
-            const brand = (sku?.brand ?? 'lotte') as Department;
+            const brandRaw = sku?.brand ?? '';
+            const dept = BRAND_TO_DEPT[brandRaw];
+            const thumb = sku?.thumbnail_url ?? null;
             const face = sku?.denomination ?? 0;
+            const skuLabel = sku
+              ? `${shortBrandLabel(brandRaw)} ${(face / 10000).toLocaleString('ko-KR')}만원권`
+              : '알 수 없는 상품권';
             const requesterName =
               c.requester?.store_name ||
               c.requester?.full_name ||
@@ -152,7 +122,7 @@ export default async function AdminCancellationsPage({
                 />
                 <div className="flex-1 px-5 py-4">
                   <div className="mb-3 flex flex-wrap items-center gap-2.5">
-                    <span className="text-muted-foreground font-mono text-[12px] font-bold">
+                    <span className="text-muted-foreground font-mono text-[13px] font-bold">
                       CN-{c.id.toString().padStart(5, '0')}
                     </span>
                     <R2Pill tone={c.role_at_request === 'buyer' ? 'progress' : 'warning'}>
@@ -162,7 +132,7 @@ export default async function AdminCancellationsPage({
                       <R2Pill tone="danger">⚠ 처리시한 {sla}h 초과</R2Pill>
                     )}
                     {c.status === 'pending' && !breach && (
-                      <span className="text-muted-foreground text-[12px] tabular-nums">
+                      <span className="text-muted-foreground text-[13px] tabular-nums">
                         {sla}h 경과 · {formatTime(c.requested_at)}
                       </span>
                     )}
@@ -199,7 +169,7 @@ export default async function AdminCancellationsPage({
                         </div>
                         <div>
                           <div className="text-[14px] font-extrabold">{requesterName}</div>
-                          <div className="text-muted-foreground font-mono text-[11px]">
+                          <div className="text-muted-foreground font-mono text-[12px]">
                             {c.requester?.username
                               ? `@${c.requester.username}`
                               : c.requested_by.slice(0, 8)}
@@ -208,13 +178,25 @@ export default async function AdminCancellationsPage({
                       </div>
                       {c.listing && (
                         <div className="bg-warm-50 flex items-center gap-2.5 rounded-[10px] px-3.5 py-3">
-                          <DeptMark dept={brand} size={32} />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-[13px] font-extrabold">
-                              {(face / 10000).toLocaleString('ko-KR')}만원권
+                          {thumb ? (
+                            <div className="border-warm-200 relative size-9 shrink-0 overflow-hidden rounded-[8px] border bg-white">
+                              <Image
+                                src={thumb}
+                                alt={skuLabel}
+                                fill
+                                sizes="36px"
+                                className="object-cover"
+                              />
                             </div>
-                            <div className="text-muted-foreground font-mono text-[11px]">
-                              {shortId(c.listing_id)}
+                          ) : dept ? (
+                            <DeptMark dept={dept} size={36} />
+                          ) : (
+                            <DeptMark dept={brandRaw} size={36} />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[14px] font-extrabold">{skuLabel}</div>
+                            <div className="text-muted-foreground font-mono text-[12px]">
+                              {shortId(c.listing_id)} · {c.listing.quantity_offered}매
                             </div>
                           </div>
                           <div className="text-right">
@@ -228,14 +210,14 @@ export default async function AdminCancellationsPage({
                     </div>
 
                     <div>
-                      <div className="text-muted-foreground mb-1.5 text-[10px] font-extrabold tracking-[0.06em] uppercase">
+                      <div className="text-muted-foreground mb-1.5 text-[12px] font-extrabold tracking-[0.06em] uppercase">
                         요청 사유
                       </div>
                       <div className="mb-2.5 text-[14px] leading-[1.6]">
                         &ldquo;{c.reason}&rdquo;
                       </div>
                       {c.admin_memo && (
-                        <div className="bg-warm-50 text-muted-foreground rounded-[8px] px-3 py-2 text-[12px]">
+                        <div className="bg-warm-50 text-muted-foreground rounded-[8px] px-3 py-2 text-[13px]">
                           <b className="text-foreground">어드민 메모:</b> {c.admin_memo}
                         </div>
                       )}

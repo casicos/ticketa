@@ -130,7 +130,7 @@ export default async function AdminAuditPage() {
               key={p}
               type="button"
               disabled
-              className="h-8 cursor-not-allowed rounded-[6px] px-3 text-[12px] font-extrabold disabled:opacity-90"
+              className="h-8 cursor-not-allowed rounded-[6px] px-3 text-[13px] font-extrabold disabled:opacity-90"
               style={{
                 background: i === 0 ? '#fff' : 'transparent',
                 color: i === 0 ? 'var(--foreground)' : 'var(--muted-foreground)',
@@ -157,13 +157,13 @@ export default async function AdminAuditPage() {
           <input
             disabled
             placeholder="이벤트 검색 (purchase, cancel, role.grant …)"
-            className="placeholder:text-muted-foreground flex-1 border-0 bg-transparent text-[13px] outline-none disabled:cursor-not-allowed"
+            className="placeholder:text-muted-foreground flex-1 border-0 bg-transparent text-[14px] outline-none disabled:cursor-not-allowed"
           />
         </div>
         <button
           type="button"
           disabled
-          className="border-border inline-flex h-8 cursor-not-allowed items-center gap-1.5 rounded-[8px] border bg-white px-3 text-[12px] font-bold disabled:opacity-80"
+          className="border-border inline-flex h-8 cursor-not-allowed items-center gap-1.5 rounded-[8px] border bg-white px-3 text-[13px] font-bold disabled:opacity-80"
         >
           <span className="text-muted-foreground">엔티티</span>
           <span className="font-extrabold">전체</span>▾
@@ -171,7 +171,7 @@ export default async function AdminAuditPage() {
         <button
           type="button"
           disabled
-          className="border-border inline-flex h-8 cursor-not-allowed items-center gap-1.5 rounded-[8px] border bg-white px-3 text-[12px] font-bold disabled:opacity-80"
+          className="border-border inline-flex h-8 cursor-not-allowed items-center gap-1.5 rounded-[8px] border bg-white px-3 text-[13px] font-bold disabled:opacity-80"
         >
           <span className="text-muted-foreground">액터</span>
           <span className="font-extrabold">전체</span>▾
@@ -179,7 +179,7 @@ export default async function AdminAuditPage() {
       </div>
 
       {/* Color legend */}
-      <div className="text-muted-foreground mb-3.5 flex flex-wrap gap-3.5 text-[11px]">
+      <div className="text-muted-foreground mb-3.5 flex flex-wrap gap-3.5 text-[12px]">
         {(['tx', 'mileage', 'cancel', 'inspect', 'security'] as Kind[]).map((k) => (
           <span key={k} className="inline-flex items-center gap-1.5">
             <span className="size-2.5 rounded-[3px]" style={{ background: KIND_COLOR[k] }} />
@@ -197,7 +197,7 @@ export default async function AdminAuditPage() {
         ) : (
           groups.map((group) => (
             <div key={group.date}>
-              <div className="border-warm-100 text-muted-foreground sticky top-0 z-10 border-b bg-white py-3.5 text-[11px] font-extrabold tracking-[0.08em] uppercase">
+              <div className="border-warm-100 text-muted-foreground sticky top-0 z-10 border-b bg-white py-3.5 text-[12px] font-extrabold tracking-[0.08em] uppercase">
                 {dateGroupLabel(group.items[0]!.created_at)}
               </div>
               {group.items.map((ev, i) => {
@@ -213,10 +213,10 @@ export default async function AdminAuditPage() {
                     }}
                   >
                     <div className="relative pr-4 text-right">
-                      <div className="font-mono text-[13px] font-extrabold tabular-nums">
+                      <div className="font-mono text-[14px] font-extrabold tabular-nums">
                         {formatTime(ev.created_at)}
                       </div>
-                      <div className="text-muted-foreground mt-0.5 text-[11px]">
+                      <div className="text-muted-foreground mt-0.5 text-[12px]">
                         {actorLabel(ev)}
                       </div>
                       <span
@@ -230,16 +230,16 @@ export default async function AdminAuditPage() {
                     >
                       <div className="mb-1 flex flex-wrap items-center gap-2.5">
                         <span
-                          className="rounded-[4px] px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.06em] text-white"
+                          className="rounded-[4px] px-1.5 py-0.5 text-[12px] font-extrabold tracking-[0.06em] text-white"
                           style={{ background: color }}
                         >
                           {KIND_LABEL[kind]}
                         </span>
-                        <span className="font-mono text-[13px] font-extrabold">
+                        <span className="font-mono text-[14px] font-extrabold">
                           {ev.entity_type}.{ev.event}
                         </span>
                         {(ev.from_state || ev.to_state) && (
-                          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[12px]">
+                          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[13px]">
                             {ev.from_state && (
                               <span className="border-border rounded-[4px] border bg-white px-1.5 py-0.5 font-mono">
                                 {ev.from_state}
@@ -256,7 +256,7 @@ export default async function AdminAuditPage() {
                         )}
                         {ev.entity_id && (
                           <span
-                            className="ml-auto font-mono text-[12px] font-extrabold"
+                            className="ml-auto font-mono text-[13px] font-extrabold"
                             style={{ color: 'var(--ticketa-blue-500)' }}
                           >
                             {shortId(ev.entity_id)}
@@ -265,11 +265,11 @@ export default async function AdminAuditPage() {
                       </div>
                       {ev.metadata && Object.keys(ev.metadata).length > 0 && (
                         <details>
-                          <summary className="text-muted-foreground cursor-pointer text-[11px] font-bold select-none">
+                          <summary className="text-muted-foreground cursor-pointer text-[12px] font-bold select-none">
                             메타데이터 펼치기
                           </summary>
                           <pre
-                            className="mt-2 overflow-x-auto rounded-[6px] p-2.5 font-mono text-[12px] leading-[1.5]"
+                            className="mt-2 overflow-x-auto rounded-[6px] p-2.5 font-mono text-[13px] leading-[1.5]"
                             style={{ background: '#11161E', color: '#A7E1B5' }}
                           >
                             {JSON.stringify(ev.metadata, null, 2)}

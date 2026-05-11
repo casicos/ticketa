@@ -1,39 +1,25 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AdminPageHead, AdminKpi } from '@/components/admin/admin-shell';
 import { R2Pill } from '@/components/admin/r2';
 import { DeptMark, type Department } from '@/components/ticketa/dept-mark';
 import { shortId } from '@/lib/format';
-import type { ListingStatus } from '@/lib/domain/listings';
+import { fetchAdminListings } from '@/lib/domain/admin/listings';
 
 // NOTE: 검색·필터·CSV·일괄·강제비공개·페이지네이션 — 시나리오 미필수, "지원 예정" 라벨.
 //       매물 상태 관리는 /admin/intake (단계별 처리) + /admin/cancellations (취소) 에서 진행.
 
-type AdminListingRow = {
-  id: string;
-  status: ListingStatus;
-  unit_price: number;
-  quantity_offered: number;
-  pre_verified: boolean;
-  verified_at: string | null;
-  created_at: string;
-  admin_memo: string | null;
-  seller_id: string;
-  seller: {
-    id: string;
-    full_name: string | null;
-    username: string | null;
-    store_name: string | null;
-  } | null;
-  sku: { id: string; brand: string; denomination: number; display_name: string } | null;
+// DB brand("AK백화점") → DeptMark 키 + 짧은 라벨
+const BRAND_TO_DEPT: Record<string, Department> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
 };
 
-const BRAND_LABEL: Record<string, string> = {
-  lotte: '롯데',
-  hyundai: '현대',
-  shinsegae: '신세계',
-  galleria: '갤러리아',
-  ak: 'AK',
-};
+function shortBrandLabel(brand: string): string {
+  const stripped = brand.replace(/백화점$/, '').trim();
+  return stripped || brand;
+}
 
 const STATUS_VARIANT: Record<
   string,
@@ -53,7 +39,7 @@ function StatusPill({ status }: { status: string }) {
   const v = STATUS_VARIANT[status] ?? STATUS_VARIANT.completed!;
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-extrabold tracking-[0.02em]"
+      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[13px] font-extrabold tracking-[0.02em]"
       style={{ color: v.color, background: v.bg }}
     >
       <span className="size-1.5 rounded-full" style={{ background: v.color }} />
@@ -73,33 +59,7 @@ function formatAge(iso: string): string {
 }
 
 export default async function AdminListingsPage() {
-  const supabase = await createSupabaseServerClient();
-
-  const { data: rows } = await supabase
-    .from('listing')
-    .select(
-      `id, status, unit_price, quantity_offered, pre_verified, verified_at, created_at, admin_memo,
-       seller_id,
-       seller:seller_id(id, full_name, username, store_name),
-       sku:sku_id(id, brand, denomination, display_name)`,
-    )
-    .order('created_at', { ascending: false })
-    .limit(100);
-
-  const listings = (rows ?? []) as unknown as AdminListingRow[];
-
-  // 에이전트 판단을 위한 seller_id → role 매핑 (단일 쿼리)
-  const sellerIds = Array.from(new Set(listings.map((l) => l.seller_id)));
-  const agentSellerIds = new Set<string>();
-  if (sellerIds.length > 0) {
-    const { data: agents } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'agent')
-      .is('revoked_at', null)
-      .in('user_id', sellerIds);
-    for (const a of agents ?? []) agentSellerIds.add(a.user_id);
-  }
+  const { rows: listings, agentSellerIds } = await fetchAdminListings();
 
   const total = listings.length;
   const agentCount = listings.filter((l) => agentSellerIds.has(l.seller_id)).length;
@@ -116,7 +76,7 @@ export default async function AdminListingsPage() {
         sub="등록된 모든 매물 — 검색·강제 비공개·정산 조정"
         right={
           <div className="flex items-center gap-2">
-            <span className="border-border bg-warm-50 text-muted-foreground inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-dashed px-3 text-[12px] font-bold">
+            <span className="border-border bg-warm-50 text-muted-foreground inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-dashed px-3 text-[13px] font-bold">
               CSV · 일괄 작업
               <R2Pill tone="neutral">지원 예정</R2Pill>
             </span>
@@ -151,7 +111,7 @@ export default async function AdminListingsPage() {
       </div>
 
       {/* Filter bar — 지원 예정 (시나리오 단계에서는 최근 100건 자동 노출) */}
-      <div className="border-border bg-warm-50 text-muted-foreground mb-3.5 flex flex-wrap items-center gap-2.5 rounded-[12px] border border-dashed p-3.5 text-[12px]">
+      <div className="border-border bg-warm-50 text-muted-foreground mb-3.5 flex flex-wrap items-center gap-2.5 rounded-[12px] border border-dashed p-3.5 text-[13px]">
         <span>검색 · 셀러유형 · 백화점 · 권종 · 상태 필터</span>
         <R2Pill tone="neutral">지원 예정</R2Pill>
         <span className="ml-auto">최근 등록 100건 자동 노출 중</span>
@@ -166,7 +126,7 @@ export default async function AdminListingsPage() {
                 (h, i) => (
                   <th
                     key={i}
-                    className="text-muted-foreground px-3 py-3 text-left text-[12px] font-extrabold tracking-[0.06em] uppercase"
+                    className="text-muted-foreground px-3 py-3 text-left text-[13px] font-extrabold tracking-[0.06em] uppercase"
                   >
                     {h}
                   </th>
@@ -188,7 +148,8 @@ export default async function AdminListingsPage() {
               listings.map((r) => {
                 const isFlagged = r.admin_memo && r.admin_memo.startsWith('[판매자요청]');
                 const isAgent = agentSellerIds.has(r.seller_id);
-                const brand = r.sku?.brand ?? 'lotte';
+                const brand = r.sku?.brand ?? '';
+                const dept = BRAND_TO_DEPT[brand];
                 const sellerLabel =
                   (isAgent && r.seller?.store_name) ||
                   r.seller?.full_name ||
@@ -205,11 +166,11 @@ export default async function AdminListingsPage() {
                     <td className="w-[34px] px-3 py-3">
                       <div className="border-border size-3.5 rounded-[3px] border-[1.5px]" />
                     </td>
-                    <td className="px-3 py-3 font-mono text-[13px] font-bold">{shortId(r.id)}</td>
+                    <td className="px-3 py-3 font-mono text-[14px] font-bold">{shortId(r.id)}</td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <DeptMark dept={brand as Department} size={22} />
-                        <span className="text-[14px] font-bold">{BRAND_LABEL[brand] ?? brand}</span>
+                        {dept ? <DeptMark dept={dept} size={22} /> : null}
+                        <span className="text-[14px] font-bold">{shortBrandLabel(brand)}</span>
                       </div>
                     </td>
                     <td className="px-3 py-3 font-bold tabular-nums">
@@ -219,7 +180,7 @@ export default async function AdminListingsPage() {
                       <div className="font-extrabold tabular-nums">
                         {r.unit_price.toLocaleString('ko-KR')}원
                       </div>
-                      <div className="flex items-center gap-2 text-[12px]">
+                      <div className="flex items-center gap-2 text-[13px]">
                         {discountPct > 0 ? (
                           <span style={{ color: '#1F6B43', fontWeight: 700 }}>
                             −{discountPct.toFixed(1)}%
@@ -236,7 +197,7 @@ export default async function AdminListingsPage() {
                       <div className="flex items-center gap-1.5">
                         {isAgent && (
                           <span
-                            className="rounded-[3px] px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.06em] text-white"
+                            className="rounded-[3px] px-1.5 py-0.5 text-[12px] font-extrabold tracking-[0.06em] text-white"
                             style={{
                               background: 'linear-gradient(135deg, #D4A24C, #B6862E)',
                             }}
@@ -244,10 +205,10 @@ export default async function AdminListingsPage() {
                             AGENT
                           </span>
                         )}
-                        <span className="text-[13px] font-bold">{sellerLabel}</span>
+                        <span className="text-[14px] font-bold">{sellerLabel}</span>
                       </div>
                       {r.seller?.username && (
-                        <div className="text-muted-foreground font-mono text-[11px]">
+                        <div className="text-muted-foreground font-mono text-[12px]">
                           @{r.seller.username}
                         </div>
                       )}
@@ -256,33 +217,33 @@ export default async function AdminListingsPage() {
                       <StatusPill status={r.status} />
                       {r.pre_verified && r.verified_at && (
                         <div
-                          className="mt-1 text-[11px] font-extrabold"
+                          className="mt-1 text-[12px] font-extrabold"
                           style={{ color: '#1F6B43' }}
                         >
-                          [인증] 매물
+                          인증 매물
                         </div>
                       )}
                       {isFlagged && (
-                        <div className="text-destructive mt-1 text-[11px] font-extrabold">
+                        <div className="text-destructive mt-1 text-[12px] font-extrabold">
                           ⚠ 내림 요청
                         </div>
                       )}
                     </td>
-                    <td className="text-muted-foreground px-3 py-3 text-[12px] tabular-nums">
-                      {formatAge(r.created_at)}
+                    <td className="text-muted-foreground px-3 py-3 text-[13px] tabular-nums">
+                      {formatAge(r.submitted_at)}
                     </td>
-                    <td className="text-muted-foreground px-3 py-3 text-right text-[12px]">—</td>
+                    <td className="text-muted-foreground px-3 py-3 text-right text-[13px]">—</td>
                   </tr>
                 );
               })
             )}
           </tbody>
         </table>
-        <div className="border-warm-100 bg-warm-50 flex items-center justify-between border-t px-4 py-3 text-[13px]">
+        <div className="border-warm-100 bg-warm-50 flex items-center justify-between border-t px-4 py-3 text-[14px]">
           <span className="text-muted-foreground tabular-nums">
             1 — {listings.length}건 / 최근 100건 한도
           </span>
-          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[11px]">
+          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[12px]">
             페이지네이션
             <R2Pill tone="neutral">지원 예정</R2Pill>
           </span>

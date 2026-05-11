@@ -121,10 +121,10 @@ export default async function AdminUsersPage({
         title="사용자 관리"
         sub="회원 검색 · 등급 / 한도 / 제재 · 에이전트 승인"
         right={
-          <span className="border-border bg-warm-50 text-muted-foreground inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-dashed px-3 text-[12px] font-bold">
+          <span className="border-border bg-warm-50 text-muted-foreground inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-dashed px-3 text-[13px] font-bold">
             + 회원 추가
             <span
-              className="rounded-full px-2 py-0.5 text-[11px] font-extrabold"
+              className="rounded-full px-2 py-0.5 text-[12px] font-extrabold"
               style={{ background: 'rgba(120,115,108,0.12)', color: '#57534e' }}
             >
               지원 예정
@@ -173,7 +173,7 @@ export default async function AdminUsersPage({
                 {t.label}
                 {tabCounts[t.id] > 0 && (
                   <span
-                    className="rounded-full px-1.5 text-[11px] font-extrabold tabular-nums"
+                    className="rounded-full px-1.5 text-[12px] font-extrabold tabular-nums"
                     style={{
                       background: active ? 'var(--foreground)' : 'var(--warm-100)',
                       color: active ? '#fff' : 'var(--muted-foreground)',
@@ -240,7 +240,7 @@ export default async function AdminUsersPage({
             name="period"
             defaultValue={period}
             title="가입기간 필터"
-            className="border-border text-foreground hover:bg-warm-50 h-9 cursor-pointer rounded-[8px] border bg-white px-2.5 text-[12px] font-bold focus:outline-none"
+            className="border-border text-foreground hover:bg-warm-50 h-9 cursor-pointer rounded-[8px] border bg-white px-2.5 text-[13px] font-bold focus:outline-none"
           >
             {PERIOD_OPTIONS.map((p) => (
               <option key={p.id} value={p.id}>
@@ -250,7 +250,7 @@ export default async function AdminUsersPage({
           </select>
           <span
             title="등급 필터 — 지원 예정 (상단 탭이 동일 기능 제공)"
-            className="border-border bg-warm-50 text-muted-foreground inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-[8px] border border-dashed px-3 text-[12px] font-bold"
+            className="border-border bg-warm-50 text-muted-foreground inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-[8px] border border-dashed px-3 text-[13px] font-bold"
           >
             등급
             <svg
@@ -264,7 +264,7 @@ export default async function AdminUsersPage({
               <path d="m6 9 6 6 6-6" />
             </svg>
             <span
-              className="rounded-full px-1.5 text-[10px] font-extrabold"
+              className="rounded-full px-1.5 text-[12px] font-extrabold"
               style={{ background: 'rgba(120,115,108,0.12)', color: '#57534e' }}
             >
               지원 예정
@@ -273,7 +273,7 @@ export default async function AdminUsersPage({
           {(search || period !== 'all') && (
             <Link
               href={`/admin/users?tab=${tab}`}
-              className="text-muted-foreground text-[12px] hover:underline"
+              className="text-muted-foreground text-[13px] hover:underline"
             >
               초기화
             </Link>
@@ -299,7 +299,7 @@ export default async function AdminUsersPage({
               ].map((h) => (
                 <th
                   key={h}
-                  className="text-muted-foreground px-3.5 py-3 text-left text-[12px] font-extrabold tracking-[0.06em] uppercase"
+                  className="text-muted-foreground px-3.5 py-3 text-left text-[13px] font-extrabold tracking-[0.06em] uppercase"
                 >
                   {h}
                 </th>
@@ -354,27 +354,27 @@ export default async function AdminUsersPage({
                             {u.full_name || userLabel}
                           </div>
                           {u.store_name && (
-                            <div className="text-muted-foreground truncate text-[12px]">
+                            <div className="text-muted-foreground truncate text-[13px]">
                               {u.store_name}
                             </div>
                           )}
                           {realEmail && (
-                            <div className="text-muted-foreground truncate font-mono text-[11px]">
+                            <div className="text-muted-foreground truncate font-mono text-[12px]">
                               {realEmail}
                             </div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="text-muted-foreground px-3.5 py-3 font-mono text-[12px]">
+                    <td className="text-muted-foreground px-3.5 py-3 font-mono text-[13px]">
                       {u.username ? `@${u.username}` : shortId(u.id)}
                       {u.nickname && (
-                        <div className="text-foreground font-mono text-[11px]">★ {u.nickname}</div>
+                        <div className="text-foreground font-mono text-[12px]">★ {u.nickname}</div>
                       )}
                     </td>
                     <td className="px-3.5 py-3">
                       <span
-                        className="inline-flex items-center rounded-[4px] px-1.5 py-0.5 text-[11px] font-extrabold tracking-[0.06em] text-white"
+                        className="inline-flex items-center rounded-[4px] px-1.5 py-0.5 text-[12px] font-extrabold tracking-[0.06em] text-white"
                         style={{
                           background:
                             tier.label === 'AGENT' || tier.label === 'ADMIN'
@@ -390,7 +390,7 @@ export default async function AdminUsersPage({
                     <td className="px-3.5 py-3">
                       {u.phone_verified ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold"
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-extrabold"
                           style={{ color: '#1F6B43', background: 'rgba(31,107,67,0.12)' }}
                         >
                           <span className="size-1.5 rounded-full bg-[#1F6B43]" />
@@ -398,14 +398,14 @@ export default async function AdminUsersPage({
                         </span>
                       ) : (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold"
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-extrabold"
                           style={{ color: '#8C8278', background: 'var(--warm-100)' }}
                         >
                           미인증
                         </span>
                       )}
                     </td>
-                    <td className="px-3.5 py-3 text-[12px] tabular-nums">
+                    <td className="px-3.5 py-3 text-[13px] tabular-nums">
                       {txCount > 0 ? (
                         <span className="text-foreground font-extrabold">
                           {txCount.toLocaleString('ko-KR')}건
@@ -414,7 +414,7 @@ export default async function AdminUsersPage({
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="px-3.5 py-3 text-[12px] tabular-nums">
+                    <td className="px-3.5 py-3 text-[13px] tabular-nums">
                       {txVolume > 0 ? (
                         <span className="text-foreground font-extrabold">
                           {Math.round(txVolume / 10000).toLocaleString('ko-KR')}만
@@ -423,7 +423,7 @@ export default async function AdminUsersPage({
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="text-muted-foreground px-3.5 py-3 text-[12px] tabular-nums">
+                    <td className="text-muted-foreground px-3.5 py-3 text-[13px] tabular-nums">
                       {formatDate(u.created_at)}
                     </td>
                     <td className="px-3.5 py-3">
@@ -455,7 +455,7 @@ export default async function AdminUsersPage({
                     <td className="px-3.5 py-3 text-right">
                       <span
                         title="회원 상세 — 지원 예정"
-                        className="border-border bg-warm-50 text-muted-foreground inline-flex h-7 cursor-not-allowed items-center rounded-[6px] border border-dashed px-2.5 text-[11px] font-bold"
+                        className="border-border bg-warm-50 text-muted-foreground inline-flex h-7 cursor-not-allowed items-center rounded-[6px] border border-dashed px-2.5 text-[12px] font-bold"
                       >
                         상세 → 지원 예정
                       </span>

@@ -15,24 +15,12 @@ import {
   type ListingStatus,
 } from '@/lib/domain/listings';
 import { callCancelListing } from '@/lib/domain/mileage';
+import { SHIPPING_CARRIERS, type ShippingCarrierCode } from './data';
 
 const listingIdSchema = z.object({
   listing_id: z.string().uuid(),
 });
 
-export const SHIPPING_CARRIERS = [
-  { code: 'kpost', label: '우체국' },
-  { code: 'cj', label: 'CJ대한통운' },
-  { code: 'hanjin', label: '한진' },
-  { code: 'lotte', label: '롯데' },
-  { code: 'logen', label: '로젠' },
-  { code: 'cvs_cu', label: '편의점 CU' },
-  { code: 'cvs_gs25', label: '편의점 GS25' },
-  { code: 'cvs_emart24', label: '편의점 이마트24' },
-  { code: 'cvs_seven', label: '편의점 세븐일레븐' },
-  { code: 'etc', label: '기타' },
-] as const;
-type ShippingCarrierCode = (typeof SHIPPING_CARRIERS)[number]['code'];
 const shippingCarrierCodes = SHIPPING_CARRIERS.map((c) => c.code) as [
   ShippingCarrierCode,
   ...ShippingCarrierCode[],
@@ -236,8 +224,18 @@ export async function markShippedNotifyAction(formData: FormData) {
     }
 
     const nowIso = new Date().toISOString();
-    const memoLine = `[구매자발송] ${nowIso} ${carrierLabel} 운송장=${tracking_no}${trimmedMemo ? ` 메모=${trimmedMemo}` : ''}`;
-    const nextMemo = listing.admin_memo ? `${listing.admin_memo}\n${memoLine}` : memoLine;
+    const nowKr = new Date().toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const memoLine = `${nowKr} 발송 처리 — ${carrierLabel} 송장 ${tracking_no}${
+      trimmedMemo ? `\n   메모: ${trimmedMemo}` : ''
+    }`;
+    const nextMemo = listing.admin_memo ? `${listing.admin_memo}\n\n${memoLine}` : memoLine;
 
     const { error } = await supabase
       .from('listing')

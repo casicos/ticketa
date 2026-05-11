@@ -247,7 +247,7 @@ export function AdminShell({
           </Link>
           <div className="mt-2 flex items-center gap-1.5">
             <span className="size-[5px] rounded-full" style={{ background: accent }} />
-            <span className="text-[13px] font-bold tracking-[0.10em] text-white/55 uppercase">
+            <span className="text-[14px] font-bold tracking-[0.10em] text-white/55 uppercase">
               {panelLabel}
             </span>
           </div>
@@ -258,7 +258,7 @@ export function AdminShell({
           {sections.map((section, si) => (
             <div key={si} className={si === 0 ? '' : 'mt-4'}>
               {section.title && (
-                <div className="mb-1.5 px-3 text-[11px] font-bold tracking-[0.08em] text-white/35 uppercase">
+                <div className="mb-1.5 px-3 text-[12px] font-bold tracking-[0.08em] text-white/35 uppercase">
                   {section.title}
                 </div>
               )}
@@ -276,7 +276,7 @@ export function AdminShell({
                       >
                         <Icon size={18} strokeWidth={1.75} className="opacity-40" />
                         <span>{it.label}</span>
-                        <span className="ml-auto rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[11px] font-bold tracking-[0.04em] text-white/55">
+                        <span className="ml-auto rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[12px] font-bold tracking-[0.04em] text-white/55">
                           보류
                         </span>
                       </div>
@@ -308,7 +308,7 @@ export function AdminShell({
                       <span>{it.label}</span>
                       {it.badge !== undefined && it.badge > 0 && (
                         <span
-                          className="ml-auto inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-full px-1.5 text-[12px] font-extrabold tabular-nums"
+                          className="ml-auto inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-full px-1.5 text-[13px] font-extrabold tabular-nums"
                           style={{ background: '#FF6B5A', color: '#fff' }}
                         >
                           {it.badge > 9 ? '9+' : it.badge}
@@ -324,7 +324,7 @@ export function AdminShell({
 
         {/* Footer */}
         <div
-          className="px-5 py-5 text-[13px]"
+          className="px-5 py-5 text-[14px]"
           style={{
             borderTop: '1px solid rgba(255,255,255,0.08)',
             color: 'rgba(255,255,255,0.55)',

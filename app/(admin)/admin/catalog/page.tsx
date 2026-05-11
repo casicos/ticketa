@@ -1,8 +1,9 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AdminPageHead } from '@/components/admin/admin-shell';
-import { R2Pill } from '@/components/admin/r2';
 import { DeptMark, type Department } from '@/components/ticketa/dept-mark';
+import { fetchSkuTxStats } from '@/lib/domain/admin/catalog';
 import { SkuActiveToggle } from './sku-toggle';
 import { SkuEditButton } from './sku-edit-button';
 import { SkuCreateButton } from '@/components/admin/sku-create-button';
@@ -17,24 +18,25 @@ type SkuRow = {
   display_order: number;
   is_active: boolean;
   created_at: string;
+  thumbnail_url: string | null;
   commission_type: 'fixed' | 'percent';
   commission_amount: number;
   commission_charged_to: 'seller' | 'buyer' | 'both';
 };
 
-type TxStats = {
-  sku_id: string;
-  tx_count: number;
-  tx_volume: number;
+// DB brand("AK백화점") → DeptMark 키("ak"). 썸네일 없을 때 폴백용.
+const BRAND_TO_DEPT: Record<string, Department> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
 };
 
-const BRAND_LABEL: Record<string, string> = {
-  lotte: '롯데',
-  hyundai: '현대',
-  shinsegae: '신세계',
-  galleria: '갤러리아',
-  ak: 'AK',
-};
+function shortBrandLabel(brand: string): string {
+  const stripped = brand.replace(/백화점$/, '').trim();
+  return stripped || brand;
+}
 
 const CHARGED_TO_LABEL: Record<string, string> = {
   seller: '/seller',
@@ -49,13 +51,14 @@ function feeLabel(s: SkuRow): string {
   return `${s.commission_amount}%${CHARGED_TO_LABEL[s.commission_charged_to] ?? ''}`;
 }
 
-const BRAND_FILTERS: { id: string; label: string }[] = [
-  { id: 'all', label: '전체' },
-  { id: 'lotte', label: '롯데' },
-  { id: 'hyundai', label: '현대' },
-  { id: 'shinsegae', label: '신세계' },
-  { id: 'galleria', label: '갤러리아' },
-  { id: 'ak', label: 'AK' },
+// id: URL slug, db: DB 컬럼 값
+const BRAND_FILTERS: { id: string; label: string; db: string | null }[] = [
+  { id: 'all', label: '전체', db: null },
+  { id: 'lotte', label: '롯데', db: '롯데백화점' },
+  { id: 'hyundai', label: '현대', db: '현대백화점' },
+  { id: 'shinsegae', label: '신세계', db: '신세계백화점' },
+  { id: 'galleria', label: '갤러리아', db: '갤러리아백화점' },
+  { id: 'ak', label: 'AK', db: 'AK백화점' },
 ];
 
 export default async function AdminCatalogPage({
@@ -65,43 +68,29 @@ export default async function AdminCatalogPage({
 }) {
   const params = await searchParams;
   const rawBrand = Array.isArray(params.brand) ? params.brand[0] : params.brand;
-  const brandFilter = BRAND_FILTERS.find((b) => b.id === rawBrand)?.id ?? 'all';
+  const brandSelected = BRAND_FILTERS.find((b) => b.id === rawBrand) ?? BRAND_FILTERS[0]!;
+  const brandFilter = brandSelected.id;
 
   const supabase = await createSupabaseServerClient();
 
   let skuQuery = supabase
     .from('sku')
     .select(
-      'id, brand, denomination, display_name, display_order, is_active, created_at, commission_type, commission_amount, commission_charged_to',
+      'id, brand, denomination, display_name, display_order, is_active, created_at, thumbnail_url, commission_type, commission_amount, commission_charged_to',
     )
     .order('brand', { ascending: true })
     .order('denomination', { ascending: true });
-  if (brandFilter !== 'all') {
-    skuQuery = skuQuery.eq('brand', brandFilter);
+  if (brandSelected.db) {
+    skuQuery = skuQuery.eq('brand', brandSelected.db);
   }
 
-  const [skusRes, listingStatsRes, totalSkuRes] = await Promise.all([
+  const [skusRes, statsMap, totalSkuRes] = await Promise.all([
     skuQuery,
-    supabase
-      .from('listing')
-      .select('sku_id, unit_price, quantity_offered')
-      .eq('status', 'completed')
-      .limit(10000),
+    fetchSkuTxStats(),
     supabase.from('sku').select('id, is_active', { count: 'exact' }),
   ]);
 
   const skus = (skusRes.data ?? []) as SkuRow[];
-  const statsMap = new Map<string, TxStats>();
-  for (const l of (listingStatsRes.data ?? []) as {
-    sku_id: string;
-    unit_price: number;
-    quantity_offered: number;
-  }[]) {
-    const prev = statsMap.get(l.sku_id) ?? { sku_id: l.sku_id, tx_count: 0, tx_volume: 0 };
-    prev.tx_count += 1;
-    prev.tx_volume += l.unit_price * l.quantity_offered;
-    statsMap.set(l.sku_id, prev);
-  }
 
   const totalSkus = (totalSkuRes.data ?? []) as { is_active: boolean }[];
   const activeCount = totalSkus.filter((s) => s.is_active).length;
@@ -123,7 +112,7 @@ export default async function AdminCatalogPage({
             <Link
               key={b.id}
               href={b.id === 'all' ? '/admin/catalog' : `/admin/catalog?brand=${b.id}`}
-              className="inline-flex h-8 items-center rounded-full border px-3.5 text-[13px] font-extrabold no-underline"
+              className="inline-flex h-8 items-center rounded-full border px-3.5 text-[14px] font-extrabold no-underline"
               style={{
                 borderColor: active ? 'var(--ticketa-blue-500)' : 'var(--border)',
                 background: active ? 'var(--ticketa-blue-500)' : 'white',
@@ -134,7 +123,7 @@ export default async function AdminCatalogPage({
             </Link>
           );
         })}
-        <span className="text-muted-foreground ml-auto text-[12px]">
+        <span className="text-muted-foreground ml-auto text-[13px]">
           {brandFilter === 'all'
             ? `${totalSkus.length} 권종 · 활성 ${activeCount} / 비활성 ${inactiveCount}`
             : `${skus.length} 권종 노출 (전체 ${totalSkus.length})`}
@@ -153,7 +142,7 @@ export default async function AdminCatalogPage({
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
           {skus.map((s) => {
             const stats = statsMap.get(s.id);
-            const brand = s.brand as Department;
+            const dept = BRAND_TO_DEPT[s.brand];
             return (
               <div
                 key={s.id}
@@ -161,14 +150,28 @@ export default async function AdminCatalogPage({
                 style={{ opacity: s.is_active ? 1 : 0.6 }}
               >
                 <div className="mb-3.5 flex items-start gap-3.5">
-                  <DeptMark dept={brand} size={56} />
+                  {s.thumbnail_url ? (
+                    <div className="bg-warm-50 border-warm-200 relative size-14 shrink-0 overflow-hidden rounded-[10px] border">
+                      <Image
+                        src={s.thumbnail_url}
+                        alt={`${s.brand} ${s.denomination.toLocaleString('ko-KR')}원권`}
+                        fill
+                        sizes="56px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : dept ? (
+                    <DeptMark dept={dept} size={56} />
+                  ) : (
+                    <DeptMark dept={s.brand} size={56} />
+                  )}
                   <div className="flex-1">
                     <div className="text-[15px] font-extrabold tracking-[-0.014em]">
-                      {BRAND_LABEL[brand] ?? brand} 백화점
+                      {shortBrandLabel(s.brand)} 백화점
                     </div>
                     <div className="text-[18px] font-extrabold tracking-[-0.018em] tabular-nums">
                       {s.denomination.toLocaleString('ko-KR')}
-                      <span className="text-muted-foreground ml-0.5 text-[13px] font-bold">
+                      <span className="text-muted-foreground ml-0.5 text-[14px] font-bold">
                         원권
                       </span>
                     </div>
@@ -177,13 +180,13 @@ export default async function AdminCatalogPage({
                 </div>
 
                 <div className="bg-warm-50 mb-3 rounded-[8px] px-3 py-2.5">
-                  <div className="text-muted-foreground mb-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase">
+                  <div className="text-muted-foreground mb-0.5 text-[12px] font-extrabold tracking-[0.08em] uppercase">
                     수수료
                   </div>
-                  <div className="font-mono text-[13px] font-bold">{feeLabel(s)}</div>
+                  <div className="font-mono text-[14px] font-bold">{feeLabel(s)}</div>
                 </div>
 
-                <div className="flex items-center gap-3 text-[12px]">
+                <div className="flex items-center gap-3 text-[13px]">
                   <div>
                     <div className="text-muted-foreground font-semibold">누적 거래</div>
                     <div className="text-[14px] font-extrabold tabular-nums">
@@ -204,6 +207,7 @@ export default async function AdminCatalogPage({
                         denomination: s.denomination,
                         display_order: s.display_order,
                         is_active: s.is_active,
+                        thumbnail_url: s.thumbnail_url,
                         commission_type: s.commission_type,
                         commission_amount: s.commission_amount,
                         commission_charged_to: s.commission_charged_to,
@@ -211,12 +215,6 @@ export default async function AdminCatalogPage({
                     />
                   </div>
                 </div>
-
-                {!s.is_active && (
-                  <div className="absolute top-3.5 right-3.5">
-                    <R2Pill tone="neutral">비활성</R2Pill>
-                  </div>
-                )}
               </div>
             );
           })}

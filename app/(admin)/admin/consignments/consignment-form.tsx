@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { admitConsignmentAction } from './actions';
@@ -19,8 +20,39 @@ export type SkuOption = {
   brand: string;
   denomination: number;
   display_name: string;
+  thumbnail_url?: string | null;
   code?: string | null;
 };
+
+const BRAND_TO_DEPT: Record<string, Department> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
+};
+
+function SkuMark({ sku, size }: { sku: SkuOption; size: number }) {
+  if (sku.thumbnail_url) {
+    return (
+      <div
+        className="border-warm-200 relative shrink-0 overflow-hidden rounded-[6px] border bg-white"
+        style={{ width: size, height: size }}
+      >
+        <Image
+          src={sku.thumbnail_url}
+          alt={sku.display_name}
+          fill
+          sizes={`${size}px`}
+          className="object-cover"
+        />
+      </div>
+    );
+  }
+  const dept = BRAND_TO_DEPT[sku.brand];
+  if (dept) return <DeptMark dept={dept} size={size} />;
+  return <DeptMark dept={sku.brand} size={size} />;
+}
 
 export type ExistingInventoryRow = {
   id: string;
@@ -31,13 +63,10 @@ export type ExistingInventoryRow = {
   qty_reserved: number;
 };
 
-const BRAND_LABEL: Record<string, string> = {
-  lotte: '롯데',
-  hyundai: '현대',
-  shinsegae: '신세계',
-  galleria: '갤러리아',
-  ak: 'AK',
-};
+function shortBrandLabel(brand: string): string {
+  const stripped = brand.replace(/백화점$/, '').trim();
+  return stripped || brand;
+}
 
 const QUICK_QTY = [10, 30, 50, 100];
 
@@ -116,7 +145,7 @@ export function ConsignmentForm({
 
       <div className="mb-3.5 grid gap-3.5 md:grid-cols-2">
         <div>
-          <label className="text-muted-foreground mb-1.5 block text-[11px] font-extrabold tracking-[0.06em] uppercase">
+          <label className="text-muted-foreground mb-1.5 block text-[12px] font-extrabold tracking-[0.06em] uppercase">
             에이전트
           </label>
           <div className="relative">
@@ -134,7 +163,7 @@ export function ConsignmentForm({
             {selectedAgent && (
               <div className="pointer-events-none absolute top-1/2 left-3 hidden -translate-y-1/2 items-center gap-2 bg-white pr-1 md:flex">
                 <span
-                  className="flex size-6 items-center justify-center rounded-[6px] text-[11px] font-black text-white"
+                  className="flex size-6 items-center justify-center rounded-[6px] text-[12px] font-black text-white"
                   style={{ background: 'linear-gradient(135deg, #D4A24C, #B6862E)' }}
                 >
                   {(selectedAgent.storeName ?? selectedAgent.label)[0]}
@@ -143,7 +172,7 @@ export function ConsignmentForm({
                   {selectedAgent.storeName ?? selectedAgent.label}
                 </span>
                 {selectedAgent.username && (
-                  <span className="text-muted-foreground font-mono text-[12px] font-semibold">
+                  <span className="text-muted-foreground font-mono text-[13px] font-semibold">
                     @{selectedAgent.username}
                   </span>
                 )}
@@ -153,7 +182,7 @@ export function ConsignmentForm({
         </div>
 
         <div>
-          <label className="text-muted-foreground mb-1.5 block text-[11px] font-extrabold tracking-[0.06em] uppercase">
+          <label className="text-muted-foreground mb-1.5 block text-[12px] font-extrabold tracking-[0.06em] uppercase">
             권종
           </label>
           <div className="relative">
@@ -164,19 +193,19 @@ export function ConsignmentForm({
             >
               {skus.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {BRAND_LABEL[s.brand] ?? s.brand} {s.denomination.toLocaleString('ko-KR')}원권
+                  {shortBrandLabel(s.brand)} {s.denomination.toLocaleString('ko-KR')}원권
                 </option>
               ))}
             </select>
             {selectedSku && (
               <div className="pointer-events-none absolute top-1/2 left-3 hidden -translate-y-1/2 items-center gap-2 bg-white pr-1 md:flex">
-                <DeptMark dept={selectedSku.brand as Department} size={22} />
+                <SkuMark sku={selectedSku} size={22} />
                 <span className="text-[14px] font-semibold">
-                  {BRAND_LABEL[selectedSku.brand] ?? selectedSku.brand}{' '}
+                  {shortBrandLabel(selectedSku.brand)}{' '}
                   {selectedSku.denomination.toLocaleString('ko-KR')}원권
                 </span>
                 {selectedSku.code && (
-                  <span className="text-muted-foreground font-mono text-[12px] font-semibold">
+                  <span className="text-muted-foreground font-mono text-[13px] font-semibold">
                     {selectedSku.code}
                   </span>
                 )}
@@ -188,7 +217,7 @@ export function ConsignmentForm({
 
       <div className="mb-[18px] grid gap-3.5 md:grid-cols-2">
         <div>
-          <label className="text-muted-foreground mb-1.5 block text-[11px] font-extrabold tracking-[0.06em] uppercase">
+          <label className="text-muted-foreground mb-1.5 block text-[12px] font-extrabold tracking-[0.06em] uppercase">
             수량
           </label>
           <div className="flex items-center gap-2">
@@ -225,7 +254,7 @@ export function ConsignmentForm({
                   type="button"
                   key={q}
                   onClick={() => setQty(q)}
-                  className="h-[30px] flex-1 cursor-pointer rounded-[7px] border text-[12px] font-extrabold tabular-nums"
+                  className="h-[30px] flex-1 cursor-pointer rounded-[7px] border text-[13px] font-extrabold tabular-nums"
                   style={{
                     borderColor: active ? 'var(--ticketa-blue-500)' : 'var(--border)',
                     background: active ? 'rgba(91,163,208,0.08)' : 'white',
@@ -240,8 +269,11 @@ export function ConsignmentForm({
         </div>
 
         <div>
-          <label className="text-muted-foreground mb-1.5 block text-[11px] font-extrabold tracking-[0.06em] uppercase">
-            위탁 단가
+          <label
+            className="text-muted-foreground mb-1.5 block text-[12px] font-extrabold tracking-[0.06em] uppercase"
+            title="에이전트가 매당 받는 정산 단가. 판매가 완료되면 이 금액으로 마일리지가 정산돼요."
+          >
+            정산 단가
           </label>
           <div className="relative h-11">
             <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-[14px] font-bold">
@@ -256,11 +288,11 @@ export function ConsignmentForm({
               placeholder="예) 47200"
               className="border-border focus:border-ticketa-blue-500 h-11 w-full rounded-[10px] border bg-white py-0 pr-[88px] pl-8 text-[18px] font-extrabold tabular-nums outline-none"
             />
-            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[11px] font-extrabold tracking-[0.04em]">
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[12px] font-extrabold tracking-[0.04em]">
               STEP 100원
             </span>
           </div>
-          <div className="text-muted-foreground mt-1.5 text-[12px] tabular-nums">
+          <div className="text-muted-foreground mt-1.5 text-[13px] tabular-nums">
             액면 {face.toLocaleString('ko-KR')}원
             {unitCost > 0 && face > 0 && (
               <>
@@ -283,11 +315,11 @@ export function ConsignmentForm({
         className="flex items-center gap-3.5 rounded-[10px] px-4 py-3.5 text-white"
         style={{ background: '#11161E' }}
       >
-        <div className="text-[11px] font-extrabold tracking-[0.08em] text-white/60 uppercase">
+        <div className="text-[12px] font-extrabold tracking-[0.08em] text-white/60 uppercase">
           총 적재가
         </div>
         <div className="ml-auto flex items-baseline gap-1.5 tabular-nums">
-          <span className="text-[13px] text-white/60">
+          <span className="text-[14px] text-white/60">
             {qty.toLocaleString('ko-KR')}매 × {unitCost.toLocaleString('ko-KR')}원 =
           </span>
           <span className="text-[24px] font-black tracking-[-0.02em]">
@@ -304,7 +336,7 @@ export function ConsignmentForm({
             setQty(30);
             setUnitCost(0);
           }}
-          className="border-border hover:bg-warm-50 inline-flex h-10 cursor-pointer items-center rounded-[10px] border bg-white px-4 text-[13px] font-bold"
+          className="border-border hover:bg-warm-50 inline-flex h-10 cursor-pointer items-center rounded-[10px] border bg-white px-4 text-[14px] font-bold"
         >
           초기화
         </button>
@@ -330,11 +362,11 @@ function PreviewCard({
   if (!matched) {
     return (
       <div className="border-border bg-warm-50 mb-4 rounded-[10px] border border-dashed p-3.5">
-        <div className="text-muted-foreground flex items-center gap-2 text-[12px]">
-          <R2Pill tone="neutral">새 행 생성</R2Pill>
+        <div className="text-muted-foreground flex items-center gap-2 text-[13px]">
+          <R2Pill tone="neutral">새로 추가</R2Pill>
           <span>
-            해당 (에이전트 · 권종 · 단가) 조합의 기존 행이 없어요. 적재 시 신규 inventory 행이
-            생성됩니다.
+            같은 조건의 위탁 재고가 없어서 새로 등록돼요. 같은 에이전트·권종·단가로 다시 입고하면 이
+            재고에 자동 합산됩니다.
           </span>
         </div>
       </div>
@@ -353,19 +385,19 @@ function PreviewCard({
       }}
     >
       <div className="mb-2 flex items-center gap-2">
-        <R2Pill tone="progress">기존 행 합산</R2Pill>
-        <span className="text-muted-foreground text-[12px]">
-          동일 조합의 행이 존재합니다 — 보유 수량에 합산됩니다
+        <R2Pill tone="progress">기존 재고에 합산</R2Pill>
+        <span className="text-muted-foreground text-[13px]">
+          같은 에이전트 · 권종 · 단가의 위탁 재고가 이미 있어서, 보유 수량에 더해져요.
         </span>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3.5 tabular-nums">
         <div className="border-border rounded-[8px] border bg-white p-2.5">
-          <div className="text-muted-foreground text-[10px] font-extrabold tracking-[0.08em] uppercase">
+          <div className="text-muted-foreground text-[12px] font-extrabold tracking-[0.08em] uppercase">
             BEFORE
           </div>
           <div className="text-[18px] font-extrabold">
             {before.toLocaleString('ko-KR')}
-            <span className="text-muted-foreground ml-0.5 text-[12px] font-bold">매</span>
+            <span className="text-muted-foreground ml-0.5 text-[13px] font-bold">매</span>
           </div>
         </div>
         <div className="text-[20px] font-extrabold" style={{ color: 'var(--ticketa-blue-500)' }}>
@@ -376,19 +408,19 @@ function PreviewCard({
           style={{ borderColor: 'var(--ticketa-blue-500)' }}
         >
           <div
-            className="text-[10px] font-extrabold tracking-[0.08em] uppercase"
+            className="text-[12px] font-extrabold tracking-[0.08em] uppercase"
             style={{ color: 'var(--ticketa-blue-500)' }}
           >
             AFTER · +{addingQty.toLocaleString('ko-KR')}매
           </div>
           <div className="text-[18px] font-extrabold">
             {after.toLocaleString('ko-KR')}
-            <span className="text-muted-foreground ml-0.5 text-[12px] font-bold">매</span>
+            <span className="text-muted-foreground ml-0.5 text-[13px] font-bold">매</span>
           </div>
         </div>
       </div>
       {matched.qty_reserved > 0 && (
-        <div className="text-muted-foreground mt-2 text-[11px] tabular-nums">
+        <div className="text-muted-foreground mt-2 text-[12px] tabular-nums">
           · 현재 판매중 {matched.qty_reserved.toLocaleString('ko-KR')}매 (영향 없음)
         </div>
       )}

@@ -57,7 +57,14 @@ export async function sendGiftFromListing(
     p_qty: input.qty,
     p_message: input.message,
   });
-  if (error) throw error;
+  if (error) {
+    // PostgrestError 는 Error instance 가 아니라 plain object — 메시지를 보존해서 throw
+    const msg = error.message || error.details || error.hint || 'RPC 호출 실패';
+    const wrapped = new Error(msg) as Error & { code?: string; details?: unknown };
+    wrapped.code = error.code;
+    wrapped.details = error;
+    throw wrapped;
+  }
   return data as string;
 }
 

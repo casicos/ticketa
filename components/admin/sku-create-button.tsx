@@ -12,7 +12,7 @@ export function SkuCreateButton() {
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}>SKU 추가</Button>
+      <Button onClick={() => setOpen(true)}>+ 권종 추가</Button>
       {open && <SkuFormModal onClose={() => setOpen(false)} />}
     </>
   );

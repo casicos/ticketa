@@ -61,13 +61,17 @@ export async function adminConfirmChargeAction(formData: FormData) {
     }
 
     const bucket = row.method === 'pg' ? 'pg' : 'cash';
+    const userMemo =
+      row.method === 'pg'
+        ? '카드 충전 완료'
+        : `무통장입금 충전 완료${row.depositor_name ? ` · 입금자 ${row.depositor_name}` : ''}`;
     await callCreditMileage({
       userId: row.user_id,
       amount: row.amount,
       bucket,
       type: 'charge',
       relatedChargeId: row.id,
-      memo: `충전 승인: method=${row.method} depositor=${row.depositor_name ?? '-'}`,
+      memo: userMemo,
     });
 
     const { error: updateErr } = await supabase

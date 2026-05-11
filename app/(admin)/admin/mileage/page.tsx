@@ -1,54 +1,28 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 import { AdminPageHead } from '@/components/admin/admin-shell';
 import { R2Pill, R2TabBar, R2TableHead, type R2TabItem } from '@/components/admin/r2';
 import { bankNameByCode } from '@/lib/domain/banks';
+import { shortId } from '@/lib/format';
+import {
+  fetchPendingCharges,
+  fetchOpenWithdraws,
+  searchUsersWithBalance,
+  fetchUserLedger,
+  type ChargeRequestRow as ChargeRow,
+  type WithdrawRequestRow as WithdrawRow,
+  type UserBalance,
+  type LedgerEntry,
+} from '@/lib/domain/admin/mileage';
 import { ConfirmChargeButton, RejectChargeButton, ResolveWithdrawButton } from './mileage-actions';
 
 // NOTE: 적립 버킷은 method 기반 자동 결정 (bank_transfer → cash, pg → pg_locked) — 시나리오 진행 충분.
 //       어드민 override 라디오 / 사용자 잔액 검색 탭 / 자동 3초 갱신은 "지원 예정".
-
-type ChargeRow = {
-  id: number;
-  user_id: string;
-  amount: number;
-  method: 'bank_transfer' | 'pg';
-  status: 'pending' | 'confirmed' | 'cancelled';
-  depositor_name: string | null;
-  requested_at: string;
-  user: { full_name: string | null; username: string | null; email: string | null } | null;
-};
-
-type WithdrawRow = {
-  id: number;
-  user_id: string;
-  amount: number;
-  fee: number;
-  bank_code: string;
-  account_number_last4: string;
-  account_holder: string;
-  status: 'requested' | 'processing' | 'completed' | 'rejected';
-  requested_at: string;
-  admin_memo: string | null;
-  user: { full_name: string | null; username: string | null; email: string | null } | null;
-};
 
 const TAB_DEFS: { id: string; label: string; href: string }[] = [
   { id: 'charge', label: '충전 승인', href: '/admin/mileage?tab=charge' },
   { id: 'withdraw', label: '출금 처리', href: '/admin/mileage?tab=withdraw' },
   { id: 'balance', label: '사용자 잔액 검색', href: '/admin/mileage?tab=balance' },
 ];
-
-const CHARGE_SELECT = `
-  id, user_id, amount, method, status, depositor_name,
-  requested_at,
-  user:user_id(full_name, username, email)
-` as const;
-
-const WITHDRAW_SELECT = `
-  id, user_id, amount, fee, bank_code, account_number_last4, account_holder,
-  status, admin_memo, requested_at,
-  user:user_id(full_name, username, email)
-` as const;
 
 function hoursAgo(iso: string): number {
   return (Date.now() - new Date(iso).getTime()) / 3_600_000;
@@ -71,26 +45,12 @@ export default async function AdminMileagePage({
   const params = await searchParams;
   const rawTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const tabId = TAB_DEFS.find((t) => t.id === rawTab)?.id ?? 'charge';
+  const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
+  const balanceQ = (rawQ ?? '').trim();
+  const rawUserId = Array.isArray(params.user) ? params.user[0] : params.user;
+  const focusedUserId = rawUserId ?? null;
 
-  const supabase = await createSupabaseServerClient();
-
-  const [chargesPending, withdrawsPending] = await Promise.all([
-    supabase
-      .from('charge_requests')
-      .select(CHARGE_SELECT)
-      .eq('status', 'pending')
-      .order('requested_at', { ascending: true })
-      .limit(50),
-    supabase
-      .from('withdraw_requests')
-      .select(WITHDRAW_SELECT)
-      .in('status', ['requested', 'processing'])
-      .order('requested_at', { ascending: true })
-      .limit(50),
-  ]);
-
-  const charges = (chargesPending.data ?? []) as unknown as ChargeRow[];
-  const withdraws = (withdrawsPending.data ?? []) as unknown as WithdrawRow[];
+  const [charges, withdraws] = await Promise.all([fetchPendingCharges(), fetchOpenWithdraws()]);
 
   const tabs: R2TabItem[] = TAB_DEFS.map((t) => ({
     id: t.id,
@@ -98,6 +58,22 @@ export default async function AdminMileagePage({
     href: t.href,
     count: t.id === 'charge' ? charges.length : t.id === 'withdraw' ? withdraws.length : undefined,
   }));
+
+  let balanceResults: UserBalance[] = [];
+  let focusedUser: UserBalance | null = null;
+  let focusedLedger: LedgerEntry[] = [];
+  if (tabId === 'balance') {
+    if (balanceQ) balanceResults = await searchUsersWithBalance(balanceQ);
+    if (focusedUserId) {
+      // 검색 결과에서 못 찾으면 단일 회원 조회
+      focusedUser = balanceResults.find((u) => u.user_id === focusedUserId) ?? null;
+      if (!focusedUser) {
+        const r = await searchUsersWithBalance(focusedUserId, 1);
+        focusedUser = r[0] ?? null;
+      }
+      if (focusedUser) focusedLedger = await fetchUserLedger(focusedUserId);
+    }
+  }
 
   return (
     <>
@@ -107,7 +83,14 @@ export default async function AdminMileagePage({
 
       {tabId === 'charge' && <ChargeTab rows={charges} />}
       {tabId === 'withdraw' && <WithdrawTab rows={withdraws} />}
-      {tabId === 'balance' && <BalancePlaceholder />}
+      {tabId === 'balance' && (
+        <BalanceTab
+          query={balanceQ}
+          results={balanceResults}
+          focusedUser={focusedUser}
+          ledger={focusedLedger}
+        />
+      )}
     </>
   );
 }
@@ -138,12 +121,12 @@ function ChargeTab({ rows }: { rows: ChargeRow[] }) {
               <tr key={r.id} className="border-warm-100 border-t" style={{ background: rowBg }}>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2.5">
-                    <div className="bg-warm-200 text-warm-700 flex size-8 items-center justify-center rounded-full text-[13px] font-extrabold">
+                    <div className="bg-warm-200 text-warm-700 flex size-8 items-center justify-center rounded-full text-[14px] font-extrabold">
                       {userName[0]}
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold">{userName}</div>
-                      <div className="text-muted-foreground font-mono text-[11px]">{username}</div>
+                      <div className="text-[14px] font-bold">{userName}</div>
+                      <div className="text-muted-foreground font-mono text-[12px]">{username}</div>
                     </div>
                   </div>
                 </td>
@@ -157,7 +140,7 @@ function ChargeTab({ rows }: { rows: ChargeRow[] }) {
                   {isBig && <R2Pill tone="warning">⚡ 200만원+</R2Pill>}
                 </td>
                 <td className="px-4 py-3.5">
-                  <div className="text-[13px] font-bold">{r.depositor_name ?? '—'}</div>
+                  <div className="text-[14px] font-bold">{r.depositor_name ?? '—'}</div>
                   {mismatch && <R2Pill tone="danger">⚠ 본명 불일치</R2Pill>}
                 </td>
                 <td className="px-4 py-3.5">
@@ -165,7 +148,7 @@ function ChargeTab({ rows }: { rows: ChargeRow[] }) {
                     {r.method === 'pg' ? '카드' : '무통장'}
                   </R2Pill>
                 </td>
-                <td className="text-muted-foreground px-4 py-3.5 text-[12px] tabular-nums">
+                <td className="text-muted-foreground px-4 py-3.5 text-[13px] tabular-nums">
                   {formatTime(r.requested_at)}
                 </td>
                 <td className="px-4 py-3.5">
@@ -174,7 +157,7 @@ function ChargeTab({ rows }: { rows: ChargeRow[] }) {
                   ) : sla >= 12 ? (
                     <R2Pill tone="warning">{sla}h</R2Pill>
                   ) : (
-                    <span className="text-muted-foreground text-[13px] tabular-nums">{sla}h</span>
+                    <span className="text-muted-foreground text-[14px] tabular-nums">{sla}h</span>
                   )}
                 </td>
                 <td className="px-4 py-3.5 text-right">
@@ -215,12 +198,12 @@ function WithdrawTab({ rows }: { rows: WithdrawRow[] }) {
               <tr key={r.id} className="border-warm-100 border-t">
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2.5">
-                    <div className="bg-warm-200 text-warm-700 flex size-8 items-center justify-center rounded-full text-[13px] font-extrabold">
+                    <div className="bg-warm-200 text-warm-700 flex size-8 items-center justify-center rounded-full text-[14px] font-extrabold">
                       {userName[0]}
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold">{userName}</div>
-                      <div className="text-muted-foreground font-mono text-[11px]">{username}</div>
+                      <div className="text-[14px] font-bold">{userName}</div>
+                      <div className="text-muted-foreground font-mono text-[12px]">{username}</div>
                     </div>
                   </div>
                 </td>
@@ -228,17 +211,17 @@ function WithdrawTab({ rows }: { rows: WithdrawRow[] }) {
                   <div className="text-[15px] font-extrabold">
                     {r.amount.toLocaleString('ko-KR')}원
                   </div>
-                  <div className="text-muted-foreground text-[11px]">
+                  <div className="text-muted-foreground text-[12px]">
                     수수료 {r.fee.toLocaleString('ko-KR')}원
                   </div>
                 </td>
-                <td className="px-4 py-3.5 text-[13px]">
+                <td className="px-4 py-3.5 text-[14px]">
                   <div className="font-bold">{bankNameByCode(r.bank_code)}</div>
-                  <div className="text-muted-foreground font-mono text-[12px]">
+                  <div className="text-muted-foreground font-mono text-[13px]">
                     {r.account_holder} · ****{r.account_number_last4}
                   </div>
                 </td>
-                <td className="text-muted-foreground px-4 py-3.5 text-[12px] tabular-nums">
+                <td className="text-muted-foreground px-4 py-3.5 text-[13px] tabular-nums">
                   {formatTime(r.requested_at)}
                 </td>
                 <td className="px-4 py-3.5">
@@ -247,37 +230,21 @@ function WithdrawTab({ rows }: { rows: WithdrawRow[] }) {
                   ) : sla >= 12 ? (
                     <R2Pill tone="warning">{sla}h</R2Pill>
                   ) : (
-                    <span className="text-muted-foreground text-[13px] tabular-nums">{sla}h</span>
+                    <span className="text-muted-foreground text-[14px] tabular-nums">{sla}h</span>
                   )}
                 </td>
                 <td className="px-4 py-3.5">
-                  <R2Pill tone={r.status === 'processing' ? 'progress' : 'neutral'}>
-                    {r.status === 'processing' ? '진행중' : '신청'}
-                  </R2Pill>
+                  <R2Pill tone="progress">처리 중</R2Pill>
                 </td>
-                <td className="px-4 py-3.5 text-right">
-                  <div className="inline-flex gap-1.5">
-                    {r.status === 'requested' && (
-                      <ResolveWithdrawButton
-                        withdrawId={r.id}
-                        status="processing"
-                        amount={r.amount}
-                        accountHolder={r.account_holder}
-                        bankCode={r.bank_code}
-                        accountLast4={r.account_number_last4}
-                      />
-                    )}
-                    {(r.status === 'requested' || r.status === 'processing') && (
-                      <ResolveWithdrawButton
-                        withdrawId={r.id}
-                        status="completed"
-                        amount={r.amount}
-                        accountHolder={r.account_holder}
-                        bankCode={r.bank_code}
-                        accountLast4={r.account_number_last4}
-                      />
-                    )}
-                  </div>
+                <td className="px-4 py-3.5">
+                  <ResolveWithdrawButton
+                    withdrawId={r.id}
+                    status="completed"
+                    amount={r.amount}
+                    accountHolder={r.account_holder}
+                    bankCode={r.bank_code}
+                    accountLast4={r.account_number_last4}
+                  />
                 </td>
               </tr>
             );
@@ -288,17 +255,203 @@ function WithdrawTab({ rows }: { rows: WithdrawRow[] }) {
   );
 }
 
-function BalancePlaceholder() {
+const LEDGER_TYPE_LABEL: Record<LedgerEntry['type'], string> = {
+  charge: '충전',
+  spend: '차감',
+  refund: '환불',
+  settle: '정산',
+  withdraw: '출금',
+  adjust: '조정',
+};
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('ko-KR', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function BalanceTab({
+  query,
+  results,
+  focusedUser,
+  ledger,
+}: {
+  query: string;
+  results: UserBalance[];
+  focusedUser: UserBalance | null;
+  ledger: LedgerEntry[];
+}) {
   return (
-    <div className="border-border bg-warm-50 rounded-[14px] border border-dashed p-12 text-center">
-      <div className="mx-auto mb-3 inline-flex">
-        <R2Pill tone="neutral">지원 예정</R2Pill>
-      </div>
-      <p className="text-[15px] font-bold">사용자 잔액 검색</p>
-      <p className="text-muted-foreground mt-1 text-[14px]">
-        사용자 검색 → cash / pg_locked / withdrawable 한눈에 + 최근 30일 원장
-        <br />— 시나리오 운영에는 비포함. 다음 단계에서 활성화 예정.
-      </p>
+    <div className="flex flex-col gap-3.5">
+      {/* 검색 폼 */}
+      <form
+        method="get"
+        className="border-border flex items-center gap-2.5 rounded-[12px] border bg-white p-3.5"
+      >
+        <input type="hidden" name="tab" value="balance" />
+        <div className="bg-warm-50 border-border relative flex h-9 flex-1 items-center gap-2 rounded-[8px] border px-3">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-muted-foreground"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-4.35-4.35" />
+          </svg>
+          <input
+            key={`bal-q-${query}`}
+            name="q"
+            defaultValue={query}
+            placeholder="이름 · 닉네임 · 이메일 · @아이디"
+            className="placeholder:text-muted-foreground flex-1 border-0 bg-transparent text-[14px] outline-none"
+          />
+        </div>
+        <button
+          type="submit"
+          className="border-border hover:bg-warm-50 h-9 rounded-[8px] border bg-white px-3.5 text-[14px] font-bold"
+        >
+          검색
+        </button>
+        {query && (
+          <Link
+            href="/admin/mileage?tab=balance"
+            className="text-muted-foreground text-[13px] hover:underline"
+          >
+            초기화
+          </Link>
+        )}
+      </form>
+
+      {/* 검색 결과 리스트 */}
+      {query && results.length === 0 && !focusedUser && (
+        <div className="border-border bg-warm-50 rounded-[12px] border border-dashed p-8 text-center">
+          <p className="text-[14px] font-bold">검색 결과가 없어요</p>
+          <p className="text-muted-foreground mt-1 text-[13px]">
+            이름·닉네임·이메일·@아이디로 검색해보세요.
+          </p>
+        </div>
+      )}
+
+      {results.length > 0 && (
+        <div className="border-border overflow-hidden rounded-[12px] border bg-white">
+          <table className="w-full border-collapse text-[14px]">
+            <R2TableHead cols={['회원', '잔액 합계', 'cash (출금가능)', 'pg_locked', '액션']} />
+            <tbody>
+              {results.map((u) => {
+                const userLabel = u.full_name || u.username || u.email || shortId(u.user_id);
+                const focused = focusedUser?.user_id === u.user_id;
+                return (
+                  <tr
+                    key={u.user_id}
+                    className="border-warm-100 border-t"
+                    style={{ background: focused ? 'rgba(91,163,208,0.06)' : '#fff' }}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="text-[14px] font-bold">{userLabel}</div>
+                      <div className="text-muted-foreground font-mono text-[12px]">
+                        {u.username ? `@${u.username}` : shortId(u.user_id)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 tabular-nums">
+                      <span className="text-[14px] font-extrabold">
+                        {u.balance.toLocaleString('ko-KR')}원
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[14px] tabular-nums">
+                      {u.cash_balance.toLocaleString('ko-KR')}원
+                    </td>
+                    <td className="px-4 py-3 text-[14px] tabular-nums">
+                      {u.pg_locked.toLocaleString('ko-KR')}원
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/admin/mileage?tab=balance&q=${encodeURIComponent(query)}&user=${u.user_id}`}
+                        className="border-border hover:bg-warm-50 inline-flex h-8 items-center rounded-[8px] border bg-white px-3 text-[13px] font-bold"
+                      >
+                        {focused ? '원장 표시 중' : '원장 보기 →'}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 포커싱된 회원의 원장 */}
+      {focusedUser && (
+        <div className="border-border overflow-hidden rounded-[12px] border bg-white">
+          <div className="border-warm-100 flex items-center justify-between border-b px-4 py-3">
+            <div>
+              <div className="text-muted-foreground text-[12px] font-extrabold tracking-[0.06em] uppercase">
+                최근 원장 —{' '}
+                {focusedUser.full_name || focusedUser.username || shortId(focusedUser.user_id)}
+              </div>
+              <div className="mt-0.5 text-[13px]">
+                cash{' '}
+                <b className="tabular-nums">{focusedUser.cash_balance.toLocaleString('ko-KR')}</b> ·
+                pg_locked{' '}
+                <b className="tabular-nums">{focusedUser.pg_locked.toLocaleString('ko-KR')}</b> ·
+                합계 <b className="tabular-nums">{focusedUser.balance.toLocaleString('ko-KR')}원</b>
+              </div>
+            </div>
+            <span className="text-muted-foreground text-[12px]">최근 30건</span>
+          </div>
+          {ledger.length === 0 ? (
+            <div className="text-muted-foreground p-8 text-center text-[14px]">원장이 없어요</div>
+          ) : (
+            <table className="w-full border-collapse text-[14px]">
+              <R2TableHead cols={['시각', '유형', '변동', '잔액 (계좌)', '메모']} />
+              <tbody>
+                {ledger.map((l) => {
+                  const sign = l.amount >= 0 ? '+' : '';
+                  const color = l.amount >= 0 ? '#1F6B43' : 'var(--destructive)';
+                  return (
+                    <tr key={l.id} className="border-warm-100 border-t">
+                      <td className="text-muted-foreground px-4 py-2.5 text-[13px] tabular-nums">
+                        {formatDateTime(l.created_at)}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <R2Pill tone={l.amount >= 0 ? 'success' : 'neutral'}>
+                          {LEDGER_TYPE_LABEL[l.type] ?? l.type}
+                        </R2Pill>
+                      </td>
+                      <td className="px-4 py-2.5 font-extrabold tabular-nums" style={{ color }}>
+                        {sign}
+                        {l.amount.toLocaleString('ko-KR')}원
+                      </td>
+                      <td className="px-4 py-2.5 tabular-nums">
+                        {l.balance_after.toLocaleString('ko-KR')}원
+                      </td>
+                      <td className="text-muted-foreground px-4 py-2.5 text-[13px]">
+                        {l.memo ?? '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {!query && !focusedUser && (
+        <div className="border-border bg-warm-50 rounded-[12px] border border-dashed p-8 text-center">
+          <p className="text-[14px] font-bold">사용자를 검색해주세요</p>
+          <p className="text-muted-foreground mt-1 text-[13px]">
+            이름·닉네임·이메일·@아이디 입력 후 검색 → cash / pg_locked / 합계 + 최근 30건 원장 노출
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -323,11 +476,11 @@ function EmptyState({ text }: { text: string }) {
           <path d="M5 13l4 4 10-10" />
         </svg>
       </div>
-      <div className="text-muted-foreground text-[11px] font-extrabold tracking-[0.08em] uppercase">
+      <div className="text-muted-foreground text-[12px] font-extrabold tracking-[0.08em] uppercase">
         처리할 항목 없음
       </div>
       <div className="mt-1 text-[16px] font-extrabold">{text}</div>
-      <div className="text-muted-foreground mt-1 text-[13px]">
+      <div className="text-muted-foreground mt-1 text-[14px]">
         새 신청이 들어오면 여기에 표시돼요.
       </div>
     </div>

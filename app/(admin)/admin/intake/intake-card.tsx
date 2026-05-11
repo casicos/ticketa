@@ -134,7 +134,7 @@ export function IntakeCard({ row }: { row: ListingRow }) {
           <p className="font-medium">
             {row.seller?.full_name ?? '(이름 없음)'}
             {row.seller?.email && (
-              <span className="text-muted-foreground block text-[11px]">{row.seller.email}</span>
+              <span className="text-muted-foreground block text-[12px]">{row.seller.email}</span>
             )}
           </p>
         </div>
@@ -143,7 +143,7 @@ export function IntakeCard({ row }: { row: ListingRow }) {
           <p className="font-medium">
             {row.buyer?.full_name ?? '—'}
             {row.buyer?.email && (
-              <span className="text-muted-foreground block text-[11px]">{row.buyer.email}</span>
+              <span className="text-muted-foreground block text-[12px]">{row.buyer.email}</span>
             )}
           </p>
         </div>
@@ -168,7 +168,7 @@ export function IntakeCard({ row }: { row: ListingRow }) {
       {/* 어드민 메모 */}
       {row.admin_memo && (
         <div className="border-border bg-muted/40 rounded-lg border p-2">
-          <pre className="text-muted-foreground text-[11px] whitespace-pre-wrap">
+          <pre className="text-muted-foreground text-[12px] whitespace-pre-wrap">
             {row.admin_memo}
           </pre>
         </div>

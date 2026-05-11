@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { DeptMark, type Department } from '@/components/ticketa/dept-mark';
@@ -20,6 +21,7 @@ type SkuRow = {
   denomination: number;
   display_order: number;
   is_active: boolean;
+  thumbnail_url?: string | null;
   commission_type?: FeeKind;
   commission_amount?: number;
   commission_charged_to?: Bearer;
@@ -37,6 +39,23 @@ const BRANDS: { k: Brand; l: string }[] = [
   { k: 'galleria', l: '갤러리아' },
   { k: 'ak', l: 'AK' },
 ];
+
+// DB 컬럼은 한글 풀네임("AK백화점"). 칩의 ASCII 키와 양방향 매핑.
+const BRAND_TO_DB: Record<Brand, string> = {
+  lotte: '롯데백화점',
+  hyundai: '현대백화점',
+  shinsegae: '신세계백화점',
+  galleria: '갤러리아백화점',
+  ak: 'AK백화점',
+};
+
+const DB_TO_BRAND: Record<string, Brand> = {
+  롯데백화점: 'lotte',
+  현대백화점: 'hyundai',
+  신세계백화점: 'shinsegae',
+  갤러리아백화점: 'galleria',
+  AK백화점: 'ak',
+};
 
 const FACES = [5000, 10000, 30000, 50000, 70000, 100000, 200000, 500000];
 
@@ -64,7 +83,10 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
   const router = useRouter();
   const isEdit = Boolean(editTarget);
 
-  const [dept, setDept] = React.useState<Brand>((editTarget?.brand as Brand) ?? 'lotte');
+  const initialBrand: Brand = editTarget?.brand
+    ? (DB_TO_BRAND[editTarget.brand] ?? 'lotte')
+    : 'lotte';
+  const [dept, setDept] = React.useState<Brand>(initialBrand);
   const [face, setFace] = React.useState(editTarget?.denomination ?? 50000);
   const [feeKind, setFeeKind] = React.useState<FeeKind>(editTarget?.commission_type ?? 'fixed');
   const [feeVal, setFeeVal] = React.useState<string>(
@@ -74,6 +96,38 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
   const [active, setActive] = React.useState(editTarget?.is_active ?? true);
   const [customFace, setCustomFace] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
+
+  // 썸네일 업로드 상태
+  const [thumbFile, setThumbFile] = React.useState<File | null>(null);
+  const [removeThumb, setRemoveThumb] = React.useState(false);
+  const existingThumb = editTarget?.thumbnail_url ?? null;
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const thumbPreview = React.useMemo(
+    () => (thumbFile ? URL.createObjectURL(thumbFile) : null),
+    [thumbFile],
+  );
+  React.useEffect(() => {
+    return () => {
+      if (thumbPreview) URL.revokeObjectURL(thumbPreview);
+    };
+  }, [thumbPreview]);
+
+  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] ?? null;
+    if (f && !f.type.startsWith('image/')) {
+      toast.error('이미지 파일만 가능해요');
+      e.target.value = '';
+      return;
+    }
+    if (f && f.size > 5 * 1024 * 1024) {
+      toast.error('5MB 이하 이미지만 가능해요');
+      e.target.value = '';
+      return;
+    }
+    setThumbFile(f);
+    if (f) setRemoveThumb(false);
+  }
 
   const displayName = makeDisplayName(dept, face);
   const feeNumber = Number(feeVal || 0);
@@ -96,12 +150,14 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
 
     const fd = new FormData();
     if (editTarget?.id) fd.set('id', editTarget.id);
-    fd.set('brand', dept);
+    fd.set('brand', BRAND_TO_DB[dept]);
     fd.set('denomination', String(face));
     fd.set('commission_type', feeKind);
     // schema 는 int 만 허용 — 퍼센트도 1% 단위 정수
     fd.set('commission_amount', String(Math.round(feeNumber)));
     fd.set('commission_charged_to', bearer);
+    if (thumbFile) fd.set('thumbnail', thumbFile);
+    if (removeThumb) fd.set('remove_thumbnail', '1');
 
     startTransition(async () => {
       const r = isEdit ? await updateSkuAction(fd) : await createSkuAction(fd);
@@ -154,13 +210,13 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
         {/* Header */}
         <div className="border-warm-100 flex items-start gap-3.5 border-b px-6 pt-5 pb-3.5">
           <div className="flex-1">
-            <div className="text-muted-foreground text-[11px] font-extrabold tracking-[0.08em] uppercase">
+            <div className="text-muted-foreground text-[12px] font-extrabold tracking-[0.08em] uppercase">
               {isEdit ? '권종 편집' : '권종 추가'}
             </div>
             <h3 className="mt-1 mb-0.5 text-[20px] font-extrabold tracking-[-0.018em]">
               {isEdit ? `${displayName} 편집` : '새 권종 등록'}
             </h3>
-            <div className="text-muted-foreground text-[12px]">
+            <div className="text-muted-foreground text-[13px]">
               {isEdit
                 ? '활성 / 수수료 정책 조정 — 기존 매물 영향 없음, 신규 매물부터 반영'
                 : '브랜드 × 권종 조합은 중복 등록 불가 · 저장 즉시 활성'}
@@ -182,13 +238,13 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
           <div className="border-warm-100 bg-warm-50 flex items-center gap-3.5 rounded-[12px] border px-4 py-3.5">
             <DeptMark dept={dept as Department} size={48} />
             <div className="flex-1">
-              <div className="text-muted-foreground mb-0.5 text-[11px] font-extrabold tracking-[0.06em] uppercase">
+              <div className="text-muted-foreground mb-0.5 text-[12px] font-extrabold tracking-[0.06em] uppercase">
                 미리보기 · 카탈로그 카드
               </div>
               <div className="text-[16px] font-extrabold tracking-[-0.014em]">
                 {deptLabel(dept)} 백화점 · {face.toLocaleString('ko-KR')}원권
               </div>
-              <div className="text-muted-foreground text-[12px]">
+              <div className="text-muted-foreground text-[13px]">
                 표시명 <b className="text-foreground">{displayName}</b> · 수수료{' '}
                 <b className="text-foreground">
                   {feeText} / {bearerLabel}
@@ -196,7 +252,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-[12px] font-bold">
+              <span className="text-muted-foreground text-[13px] font-bold">
                 {active ? '활성' : '비활성'}
               </span>
               <button
@@ -217,7 +273,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
 
           {/* Brand */}
           <div>
-            <div className="text-muted-foreground mb-2 text-[11px] font-extrabold tracking-[0.06em] uppercase">
+            <div className="text-muted-foreground mb-2 text-[12px] font-extrabold tracking-[0.06em] uppercase">
               브랜드
             </div>
             <div className="flex flex-wrap gap-2">
@@ -244,7 +300,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
               })}
             </div>
             {isEdit && (
-              <div className="text-muted-foreground mt-1.5 text-[11px]">
+              <div className="text-muted-foreground mt-1.5 text-[12px]">
                 편집 시 브랜드 / 권종은 변경 불가 — 잘못 등록한 경우 비활성 후 새로 등록
               </div>
             )}
@@ -252,7 +308,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
 
           {/* Face value */}
           <div>
-            <div className="text-muted-foreground mb-2 text-[11px] font-extrabold tracking-[0.06em] uppercase">
+            <div className="text-muted-foreground mb-2 text-[12px] font-extrabold tracking-[0.06em] uppercase">
               권종 (액면)
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -269,7 +325,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                       }
                     }}
                     disabled={isEdit}
-                    className="h-9 rounded-[8px] border-[1.5px] px-3.5 text-[13px] font-extrabold tabular-nums"
+                    className="h-9 rounded-[8px] border-[1.5px] px-3.5 text-[14px] font-extrabold tabular-nums"
                     style={{
                       borderColor: a ? R2_BLUE : 'var(--border)',
                       background: a ? R2_BLUE : '#fff',
@@ -286,7 +342,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                 <button
                   type="button"
                   onClick={() => setCustomFace(true)}
-                  className="border-border text-muted-foreground h-9 cursor-pointer rounded-[8px] border-[1.5px] border-dashed bg-white px-3 text-[13px] font-bold"
+                  className="border-border text-muted-foreground h-9 cursor-pointer rounded-[8px] border-[1.5px] border-dashed bg-white px-3 text-[14px] font-bold"
                 >
                   ＋ 직접 입력
                 </button>
@@ -298,16 +354,103 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                   step={1000}
                   value={face}
                   onChange={(e) => setFace(Math.max(1000, Number(e.target.value) || 1000))}
-                  className="border-border focus:border-ticketa-blue-500 h-9 w-[140px] rounded-[8px] border-[1.5px] bg-white px-2 text-center text-[13px] font-extrabold tabular-nums outline-none"
+                  className="border-border focus:border-ticketa-blue-500 h-9 w-[140px] rounded-[8px] border-[1.5px] bg-white px-2 text-center text-[14px] font-extrabold tabular-nums outline-none"
                   placeholder="액면 (원)"
                 />
               )}
             </div>
           </div>
 
+          {/* Thumbnail */}
+          <div>
+            <div className="text-muted-foreground mb-2 text-[12px] font-extrabold tracking-[0.06em] uppercase">
+              상품권 썸네일
+            </div>
+            <div className="border-warm-100 bg-warm-50 flex items-center gap-3.5 rounded-[12px] border p-3.5">
+              {/* preview */}
+              <div className="border-warm-200 relative size-[72px] shrink-0 overflow-hidden rounded-[10px] border bg-white">
+                {thumbPreview ? (
+                  // 새로 선택한 파일
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={thumbPreview}
+                    alt="새 썸네일 미리보기"
+                    className="size-full object-cover"
+                  />
+                ) : existingThumb && !removeThumb ? (
+                  <Image
+                    src={existingThumb}
+                    alt="현재 썸네일"
+                    fill
+                    sizes="72px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="text-muted-foreground flex size-full items-center justify-center text-[12px] font-bold">
+                    없음
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="mb-1 text-[13px] font-extrabold">
+                  {thumbFile
+                    ? thumbFile.name
+                    : existingThumb && !removeThumb
+                      ? '현재 썸네일 사용 중'
+                      : '썸네일 미등록'}
+                </div>
+                <div className="text-muted-foreground mb-2 text-[12px]">
+                  png · jpg · webp · gif · svg — 최대 5MB
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-border hover:bg-warm-100 inline-flex h-7 cursor-pointer items-center rounded-[6px] border bg-white px-2.5 text-[12px] font-bold"
+                  >
+                    {thumbFile || (existingThumb && !removeThumb) ? '이미지 교체' : '이미지 선택'}
+                  </button>
+                  {thumbFile && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setThumbFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="border-border hover:bg-warm-100 inline-flex h-7 cursor-pointer items-center rounded-[6px] border bg-white px-2.5 text-[12px] font-bold"
+                    >
+                      선택 취소
+                    </button>
+                  )}
+                  {!thumbFile && existingThumb && (
+                    <button
+                      type="button"
+                      onClick={() => setRemoveThumb((v) => !v)}
+                      className="inline-flex h-7 cursor-pointer items-center rounded-[6px] border px-2.5 text-[12px] font-bold"
+                      style={{
+                        borderColor: removeThumb ? R2_RED : 'var(--border)',
+                        background: removeThumb ? 'rgba(220,38,38,0.08)' : '#fff',
+                        color: removeThumb ? R2_RED : 'var(--foreground)',
+                      }}
+                    >
+                      {removeThumb ? '제거 취소' : '현재 썸네일 제거'}
+                    </button>
+                  )}
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                onChange={onPickFile}
+                className="hidden"
+              />
+            </div>
+          </div>
+
           {/* Fee policy */}
           <div className="border-warm-100 bg-warm-50 rounded-[12px] border px-[18px] py-4">
-            <div className="text-muted-foreground mb-2.5 text-[11px] font-extrabold tracking-[0.06em] uppercase">
+            <div className="text-muted-foreground mb-2.5 text-[12px] font-extrabold tracking-[0.06em] uppercase">
               수수료 정책
             </div>
             <div className="mb-3 flex gap-2.5">
@@ -345,7 +488,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                         {o.l}
                       </span>
                     </div>
-                    <div className="text-muted-foreground mt-0.5 ml-[22px] text-[11px]">{o.s}</div>
+                    <div className="text-muted-foreground mt-0.5 ml-[22px] text-[12px]">{o.s}</div>
                   </button>
                 );
               })}
@@ -361,7 +504,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                   onChange={(e) => setFeeVal(e.target.value)}
                   className="h-full flex-1 border-0 bg-white px-3.5 text-[15px] font-extrabold tabular-nums outline-none"
                 />
-                <span className="border-warm-100 bg-warm-50 text-muted-foreground inline-flex h-full items-center border-l px-3.5 text-[13px] font-bold">
+                <span className="border-warm-100 bg-warm-50 text-muted-foreground inline-flex h-full items-center border-l px-3.5 text-[14px] font-bold">
                   {feeKind === 'fixed' ? '원' : '%'}
                 </span>
               </div>
@@ -373,7 +516,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                 }}
               >
                 <div
-                  className="text-[10px] font-extrabold tracking-[0.06em] uppercase"
+                  className="text-[12px] font-extrabold tracking-[0.06em] uppercase"
                   style={{ color: R2_GREEN }}
                 >
                   예상 수수료 · 액면 {face.toLocaleString('ko-KR')}원
@@ -384,7 +527,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
               </div>
             </div>
 
-            <div className="text-muted-foreground mb-1.5 text-[11px] font-extrabold tracking-[0.06em] uppercase">
+            <div className="text-muted-foreground mb-1.5 text-[12px] font-extrabold tracking-[0.06em] uppercase">
               부담 주체
             </div>
             <div className="flex gap-1.5">
@@ -406,11 +549,11 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                       opacity: off ? 0.45 : 1,
                     }}
                   >
-                    <div className="flex items-center gap-1.5 text-[13px] font-extrabold">
+                    <div className="flex items-center gap-1.5 text-[14px] font-extrabold">
                       {b.l}
                       {off && (
                         <span
-                          className="rounded-full px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.04em]"
+                          className="rounded-full px-1.5 py-0.5 text-[12px] font-extrabold tracking-[0.04em]"
                           style={{
                             background: 'rgba(120,115,108,0.18)',
                             color: '#57534e',
@@ -421,7 +564,7 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
                       )}
                     </div>
                     <div
-                      className="text-[11px] font-semibold"
+                      className="text-[12px] font-semibold"
                       style={{
                         color: a ? 'rgba(255,255,255,0.85)' : 'var(--muted-foreground)',
                       }}
@@ -436,9 +579,9 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
 
           {/* Display name (auto, read-only — DB 의 display_name 컬럼은 generated stored) */}
           <div>
-            <div className="text-muted-foreground mb-1.5 text-[11px] font-extrabold tracking-[0.06em] uppercase">
+            <div className="text-muted-foreground mb-1.5 text-[12px] font-extrabold tracking-[0.06em] uppercase">
               표시명{' '}
-              <span className="text-muted-foreground text-[11px] font-semibold tracking-normal normal-case">
+              <span className="text-muted-foreground text-[12px] font-semibold tracking-normal normal-case">
                 · 자동 생성 (DB generated column · 직접 수정 불가)
               </span>
             </div>
@@ -457,20 +600,20 @@ export function SkuFormModal({ onClose, editTarget }: Props) {
               type="button"
               onClick={toggleActiveAndSave}
               disabled={pending}
-              className="inline-flex h-10 cursor-pointer items-center rounded-[10px] border bg-white px-3.5 text-[13px] font-extrabold disabled:opacity-50"
+              className="inline-flex h-10 cursor-pointer items-center rounded-[10px] border bg-white px-3.5 text-[14px] font-extrabold disabled:opacity-50"
               style={{ borderColor: 'rgba(255,82,82,0.3)', color: R2_RED }}
             >
               {active ? '비활성으로 전환' : '다시 활성으로 전환'}
             </button>
           )}
-          <span className="text-muted-foreground ml-auto text-[12px]">
+          <span className="text-muted-foreground ml-auto text-[13px]">
             저장 시 audit 로그 <b className="text-foreground">권종.{isEdit ? '편집' : '추가'}</b>{' '}
             기록
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="border-border hover:bg-warm-50 inline-flex h-10 cursor-pointer items-center rounded-[10px] border bg-white px-4 text-[13px] font-bold"
+            className="border-border hover:bg-warm-50 inline-flex h-10 cursor-pointer items-center rounded-[10px] border bg-white px-4 text-[14px] font-bold"
           >
             취소
           </button>

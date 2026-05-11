@@ -27,11 +27,11 @@ function Kpi({
       className="border-border flex-1 rounded-[12px] border bg-white p-4"
       style={{ borderLeft: `3px solid ${tone}` }}
     >
-      <div className="text-muted-foreground text-[11px] font-extrabold tracking-[0.08em] uppercase">
+      <div className="text-muted-foreground text-[12px] font-extrabold tracking-[0.08em] uppercase">
         {label}
       </div>
       <div className="mt-1 text-[26px] font-black tracking-[-0.024em] tabular-nums">{value}</div>
-      <div className="text-muted-foreground mt-0.5 text-[12px] font-semibold">{sub}</div>
+      <div className="text-muted-foreground mt-0.5 text-[13px] font-semibold">{sub}</div>
     </div>
   );
 }
@@ -79,19 +79,19 @@ function QueueCard({
             </span>
             {breaches > 0 && (
               <span
-                className="ml-auto rounded-full px-2 py-0.5 text-[11px] font-extrabold"
+                className="ml-auto rounded-full px-2 py-0.5 text-[12px] font-extrabold"
                 style={{ background: 'rgba(255,82,82,0.12)', color: '#dc2626' }}
               >
                 ⚠ 기한 {breaches}건
               </span>
             )}
           </div>
-          <div className="text-muted-foreground mt-0.5 text-[12px]">{sub}</div>
+          <div className="text-muted-foreground mt-0.5 text-[13px]">{sub}</div>
         </div>
       </div>
       <div className="mt-3 flex flex-col gap-1.5">
         {items.length === 0 ? (
-          <div className="bg-warm-50 text-muted-foreground rounded-[8px] px-2.5 py-2 text-[12px]">
+          <div className="bg-warm-50 text-muted-foreground rounded-[8px] px-2.5 py-2 text-[13px]">
             처리 대기 항목이 없어요.
           </div>
         ) : (
@@ -104,12 +104,12 @@ function QueueCard({
             >
               <span className="bg-muted-foreground size-1 rounded-full" />
               <span
-                className={`text-[12px] font-bold ${it.mono ? 'font-mono' : ''}`}
+                className={`text-[13px] font-bold ${it.mono ? 'font-mono' : ''}`}
                 style={{ color: it.hot ? '#dc2626' : 'var(--foreground)' }}
               >
                 {it.label}
               </span>
-              <span className="text-muted-foreground ml-auto text-[12px] font-semibold tabular-nums">
+              <span className="text-muted-foreground ml-auto text-[13px] font-semibold tabular-nums">
                 {it.meta}
               </span>
             </Link>
@@ -118,7 +118,7 @@ function QueueCard({
       </div>
       <Link
         href={href}
-        className="border-warm-100 mt-3 border-t pt-2.5 text-[12px] font-extrabold no-underline"
+        className="border-warm-100 mt-3 border-t pt-2.5 text-[13px] font-extrabold no-underline"
         style={{ color: accent }}
       >
         {hrefLabel} 전체 보기 →
@@ -201,13 +201,20 @@ type AuditMini = {
   actor: { full_name: string | null; username: string | null; email: string | null } | null;
 };
 
-const BRAND_LABEL: Record<string, string> = {
+// DB 의 sku.brand 는 한글 풀네임("롯데백화점") — 화면 표기는 "백화점" 빼고 줄임.
+// 영문 키 변형("lotte" 등) 도 안전하게 처리하는 fallback 포함.
+const BRAND_LABEL_EN: Record<string, string> = {
   lotte: '롯데',
   hyundai: '현대',
   shinsegae: '신세계',
   galleria: '갤러리아',
   ak: 'AK',
 };
+function brandShortLabel(brand: string | null | undefined): string {
+  if (!brand) return '';
+  if (BRAND_LABEL_EN[brand]) return BRAND_LABEL_EN[brand];
+  return brand.replace(/백화점$/, '').trim() || brand;
+}
 
 async function loadDashboard() {
   const supabase = await createSupabaseServerClient();
@@ -412,7 +419,7 @@ export default async function AdminDashboardPage() {
     const hrs = anchor ? hoursAgo(anchor) : 0;
     const sku = r.sku;
     return {
-      label: `${shortId(r.id)} · ${BRAND_LABEL[sku?.brand ?? 'lotte']} ${((sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 × ${r.quantity_offered}`,
+      label: `${shortId(r.id)} · ${brandShortLabel(sku?.brand)} ${((sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 × ${r.quantity_offered}`,
       meta: anchor ? (hrs >= 24 ? `${Math.floor(hrs)}시간 초과` : `${Math.floor(hrs)}시간`) : '—',
       mono: true,
       hot: hrs >= 24,
@@ -447,7 +454,7 @@ export default async function AdminDashboardPage() {
   });
 
   const inventoryItems: QueueItem[] = data.inventoryRows.slice(0, 3).map((i) => ({
-    label: `${i.agent?.store_name || i.agent?.username || '에이전트'} · ${BRAND_LABEL[i.sku?.brand ?? 'lotte']} ${((i.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 × ${i.qty_available}`,
+    label: `${i.agent?.store_name || i.agent?.username || '에이전트'} · ${brandShortLabel(i.sku?.brand)} ${((i.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 × ${i.qty_available}`,
     meta: formatStuck(hoursAgo(i.created_at)) + ' 전',
   }));
 
@@ -512,12 +519,12 @@ export default async function AdminDashboardPage() {
           style={{ background: 'rgba(255,82,82,0.06)', border: '1px solid rgba(255,82,82,0.2)' }}
         >
           <span
-            className="inline-flex size-[22px] items-center justify-center rounded-full text-[13px] font-extrabold text-white"
+            className="inline-flex size-[22px] items-center justify-center rounded-full text-[14px] font-extrabold text-white"
             style={{ background: '#FF6B5A' }}
           >
             !
           </span>
-          <span className="text-[13px] font-bold">
+          <span className="text-[14px] font-bold">
             지금 처리 필요 —{' '}
             {hotAlerts.map((a, i) => (
               <span key={i}>
@@ -529,7 +536,7 @@ export default async function AdminDashboardPage() {
           </span>
           <Link
             href="/admin/intake?tab=handed_over"
-            className="ml-auto text-[12px] font-extrabold no-underline"
+            className="ml-auto text-[13px] font-extrabold no-underline"
             style={{ color: '#dc2626' }}
           >
             기한 초과 전체 보기 →
@@ -599,14 +606,14 @@ export default async function AdminDashboardPage() {
             <span className="text-[14px] font-extrabold">오늘의 흐름</span>
             <Link
               href="/admin/audit"
-              className="text-muted-foreground ml-auto text-[11px] font-bold tracking-[0.06em] uppercase no-underline"
+              className="text-muted-foreground ml-auto text-[12px] font-bold tracking-[0.06em] uppercase no-underline"
             >
               감사 로그 →
             </Link>
           </div>
           <div className="flex flex-col">
             {data.auditRows.length === 0 ? (
-              <div className="text-muted-foreground px-2 py-4 text-center text-[13px]">
+              <div className="text-muted-foreground px-2 py-4 text-center text-[14px]">
                 최근 활동이 없어요.
               </div>
             ) : (
@@ -621,7 +628,7 @@ export default async function AdminDashboardPage() {
                 return (
                   <div
                     key={ev.id}
-                    className="grid items-center gap-3 py-2.5 text-[12px]"
+                    className="grid items-center gap-3 py-2.5 text-[13px]"
                     style={{
                       gridTemplateColumns: '50px 80px 1fr auto',
                       borderTop: i > 0 ? '1px solid var(--warm-100)' : 0,
@@ -633,12 +640,12 @@ export default async function AdminDashboardPage() {
                         minute: '2-digit',
                       })}
                     </span>
-                    <span className="text-muted-foreground truncate text-[11px] font-bold">
+                    <span className="text-muted-foreground truncate text-[12px] font-bold">
                       {actorLabel}
                     </span>
                     <span className="truncate">
                       <span
-                        className="mr-2 inline-block rounded-[4px] px-1.5 py-0.5 font-mono text-[10px] font-extrabold text-white"
+                        className="mr-2 inline-block rounded-[4px] px-1.5 py-0.5 font-mono text-[12px] font-extrabold text-white"
                         style={{ background: color }}
                       >
                         {ev.entity_type}.{ev.event}
@@ -655,7 +662,7 @@ export default async function AdminDashboardPage() {
 
         {/* Quick action shortcuts */}
         <div className="rounded-[14px] p-[18px] text-white" style={{ background: '#11161E' }}>
-          <div className="mb-3 text-[11px] font-extrabold tracking-[0.08em] text-white/50 uppercase">
+          <div className="mb-3 text-[12px] font-extrabold tracking-[0.08em] text-white/50 uppercase">
             빠른 액션
           </div>
           {[
@@ -682,9 +689,9 @@ export default async function AdminDashboardPage() {
             const body = (
               <>
                 <div className="text-[14px] font-extrabold text-white">{a.label}</div>
-                <div className="mt-0.5 text-[11px] text-white/50">{a.sub}</div>
+                <div className="mt-0.5 text-[12px] text-white/50">{a.sub}</div>
                 <div
-                  className="mt-0.5 text-[11px]"
+                  className="mt-0.5 text-[12px]"
                   style={{ color: a.href ? '#5BA3D0' : 'rgba(255,255,255,0.3)' }}
                 >
                   {a.target}

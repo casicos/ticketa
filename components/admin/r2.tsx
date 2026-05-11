@@ -20,7 +20,7 @@ export function R2Pill({ tone = 'neutral', children }: { tone?: Tone; children: 
   const c = TONE_MAP[tone];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold tracking-[-0.005em] whitespace-nowrap tabular-nums"
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-extrabold tracking-[-0.005em] whitespace-nowrap tabular-nums"
       style={{ background: c.bg, color: c.fg }}
     >
       {children}
@@ -44,7 +44,7 @@ export function R2BtnPrimary({
   asChildHref?: string;
 }) {
   const cls = `inline-flex cursor-pointer items-center justify-center rounded-[10px] font-extrabold text-white disabled:opacity-50 ${
-    sm ? 'h-8 px-3 text-[13px]' : 'h-11 px-5 text-[14px]'
+    sm ? 'h-8 px-3 text-[14px]' : 'h-11 px-5 text-[14px]'
   }`;
   if (asChildHref) {
     return (
@@ -88,7 +88,7 @@ export function R2BtnGhost({
   asChildHref?: string;
 }) {
   const cls = `inline-flex cursor-pointer items-center justify-center rounded-[10px] border border-border bg-white font-bold disabled:opacity-50 ${
-    sm ? 'h-8 px-3 text-[13px]' : 'h-10 px-4 text-[13px]'
+    sm ? 'h-8 px-3 text-[14px]' : 'h-10 px-4 text-[14px]'
   }`;
   const color = tone === 'danger' ? R2_RED : 'var(--foreground)';
   if (asChildHref) {
@@ -124,7 +124,7 @@ export function R2BtnSuccess({
       disabled={disabled}
       onClick={onClick}
       className={`inline-flex cursor-pointer items-center justify-center rounded-[10px] font-extrabold text-white disabled:opacity-50 ${
-        sm ? 'h-8 px-3 text-[13px]' : 'h-10 px-4 text-[13px]'
+        sm ? 'h-8 px-3 text-[14px]' : 'h-10 px-4 text-[14px]'
       }`}
       style={{ background: R2_GREEN }}
     >
@@ -145,7 +145,7 @@ export function R2TabBar({ items, active }: { items: R2TabItem[]; active: string
             {t.label}
             {t.count != null && (
               <span
-                className="ml-1 inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 text-[11px] font-extrabold tabular-nums"
+                className="ml-1 inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 text-[12px] font-extrabold tabular-nums"
                 style={{
                   background: a ? R2_BLUE : 'var(--warm-100)',
                   color: a ? '#fff' : 'var(--muted-foreground)',
@@ -186,7 +186,7 @@ export function R2TableHead({ cols }: { cols: string[] }) {
         {cols.map((c, i) => (
           <th
             key={i}
-            className="text-muted-foreground px-4 py-3 text-left text-[12px] font-extrabold tracking-[0.06em] uppercase"
+            className="text-muted-foreground px-4 py-3 text-left text-[13px] font-extrabold tracking-[0.06em] uppercase"
           >
             {c}
           </th>

@@ -1,11 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAuth, requireRole } from '@/lib/auth/guards';
 import { withServerAction } from '@/lib/server-actions';
 import { insertAuditEvent } from '@/lib/domain/audit';
 import { skuCreateSchema, skuUpdateSchema, skuToggleSchema } from '@/lib/domain/schemas/sku';
+
+const THUMB_BUCKET = 'sku-thumbnails';
+const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'];
+const MAX_BYTES = 5 * 1024 * 1024; // 5MB
 
 function readCommissionFields(formData: FormData) {
   const type = formData.get('commission_type');
@@ -16,6 +21,51 @@ function readCommissionFields(formData: FormData) {
     commission_amount: amount !== null && amount !== '' ? amount : undefined,
     commission_charged_to: chargedTo || undefined,
   };
+}
+
+function slugifyBrand(brand: string): string {
+  // 한글 brand("롯데백화점") 그대로 키 경로에 쓰면 Storage 가 거부할 수 있어 ASCII 슬러그로 치환.
+  const map: Record<string, string> = {
+    롯데백화점: 'lotte',
+    현대백화점: 'hyundai',
+    신세계백화점: 'shinsegae',
+    갤러리아백화점: 'galleria',
+    AK백화점: 'ak',
+  };
+  return map[brand] ?? (brand.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'misc');
+}
+
+async function uploadThumbnail(
+  supabase: SupabaseClient,
+  file: File,
+  brand: string,
+  denomination: number,
+): Promise<string> {
+  if (!ALLOWED_MIME.includes(file.type)) {
+    throw Object.assign(new Error('이미지 형식이 지원되지 않아요 (png/jpg/webp/gif/svg)'), {
+      code: 'INVALID_FILE',
+    });
+  }
+  if (file.size === 0) {
+    throw Object.assign(new Error('빈 파일은 업로드할 수 없어요'), { code: 'INVALID_FILE' });
+  }
+  if (file.size > MAX_BYTES) {
+    throw Object.assign(new Error('이미지는 5MB 이하만 업로드할 수 있어요'), {
+      code: 'INVALID_FILE',
+    });
+  }
+  const ext = (file.name.split('.').pop() || file.type.split('/')[1] || 'bin').toLowerCase();
+  const path = `${slugifyBrand(brand)}/${denomination}-${Date.now()}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from(THUMB_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: true });
+  if (upErr) {
+    throw Object.assign(new Error(`썸네일 업로드 실패: ${upErr.message}`), {
+      code: 'UPLOAD_FAILED',
+    });
+  }
+  const { data } = supabase.storage.from(THUMB_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 export async function createSkuAction(formData: FormData) {
@@ -43,11 +93,24 @@ export async function createSkuAction(formData: FormData) {
     }
 
     const supabase = await createSupabaseServerClient();
+
+    // Optional thumbnail upload
+    let thumbnail_url: string | null = null;
+    const thumbFile = formData.get('thumbnail');
+    if (thumbFile instanceof File && thumbFile.size > 0) {
+      thumbnail_url = await uploadThumbnail(
+        supabase,
+        thumbFile,
+        parsed.data.brand,
+        parsed.data.denomination,
+      );
+    }
+
     const { data: sku, error } = await supabase
       .from('sku')
-      .insert(parsed.data)
+      .insert({ ...parsed.data, thumbnail_url })
       .select(
-        'id, brand, denomination, display_order, is_active, commission_type, commission_amount, commission_charged_to',
+        'id, brand, denomination, display_order, is_active, thumbnail_url, commission_type, commission_amount, commission_charged_to',
       )
       .single();
 
@@ -67,6 +130,7 @@ export async function createSkuAction(formData: FormData) {
         brand: sku.brand,
         denomination: sku.denomination,
         display_order: sku.display_order,
+        thumbnail_url: sku.thumbnail_url,
         commission_type: sku.commission_type,
         commission_amount: sku.commission_amount,
         commission_charged_to: sku.commission_charged_to,
@@ -110,21 +174,36 @@ export async function updateSkuAction(formData: FormData) {
 
     const supabase = await createSupabaseServerClient();
 
-    // Fetch before state for audit diff
+    // Fetch before state for audit diff + thumbnail path defaults
     const { data: before } = await supabase
       .from('sku')
       .select(
-        'brand, denomination, display_order, is_active, commission_type, commission_amount, commission_charged_to',
+        'brand, denomination, display_order, is_active, thumbnail_url, commission_type, commission_amount, commission_charged_to',
       )
       .eq('id', id)
       .single();
 
+    // 썸네일 처리: 새 파일 업로드 / 제거 / 그대로 두기
+    const thumbFile = formData.get('thumbnail');
+    const removeThumb = formData.get('remove_thumbnail') === '1';
+    const updates: Record<string, unknown> = { ...fields };
+    if (thumbFile instanceof File && thumbFile.size > 0) {
+      updates.thumbnail_url = await uploadThumbnail(
+        supabase,
+        thumbFile,
+        fields.brand ?? before?.brand ?? '',
+        fields.denomination ?? before?.denomination ?? 0,
+      );
+    } else if (removeThumb) {
+      updates.thumbnail_url = null;
+    }
+
     const { data: sku, error } = await supabase
       .from('sku')
-      .update(fields)
+      .update(updates)
       .eq('id', id)
       .select(
-        'id, brand, denomination, display_order, is_active, commission_type, commission_amount, commission_charged_to',
+        'id, brand, denomination, display_order, is_active, thumbnail_url, commission_type, commission_amount, commission_charged_to',
       )
       .single();
 
@@ -146,6 +225,7 @@ export async function updateSkuAction(formData: FormData) {
           brand: sku.brand,
           denomination: sku.denomination,
           display_order: sku.display_order,
+          thumbnail_url: sku.thumbnail_url,
           commission_type: sku.commission_type,
           commission_amount: sku.commission_amount,
           commission_charged_to: sku.commission_charged_to,

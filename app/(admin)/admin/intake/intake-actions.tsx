@@ -22,8 +22,8 @@ import {
   markShippedNotifyAction,
   adminCancelAction,
   adminForceCompleteAction,
-  SHIPPING_CARRIERS,
 } from './actions';
+import { SHIPPING_CARRIERS } from './data';
 import type { ServerActionResult } from '@/lib/server-actions';
 
 function handleResult(result: ServerActionResult<unknown>, successMsg: string) {
@@ -167,7 +167,7 @@ function CourierChip({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-left text-[13px] font-bold tracking-[-0.01em] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-left text-[14px] font-bold tracking-[-0.01em] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         border: active ? `2px solid ${v.bg}` : '1px solid var(--border)',
         background: active ? `${v.bg}0E` : '#fff',
@@ -176,14 +176,14 @@ function CourierChip({
       }}
     >
       <span
-        className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-md text-[11px] font-black tracking-[-0.02em]"
+        className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-md text-[12px] font-black tracking-[-0.02em]"
         style={{ background: v.bg, color: v.fg ?? '#fff' }}
       >
         {v.short}
       </span>
       <span className="flex flex-col gap-px">
         <span>{label}</span>
-        {v.sub && <span className="text-muted-foreground text-[11px] font-medium">{v.sub}</span>}
+        {v.sub && <span className="text-muted-foreground text-[12px] font-medium">{v.sub}</span>}
       </span>
       {active && (
         <span className="ml-auto inline-flex" style={{ color: v.bg }}>
@@ -238,27 +238,27 @@ export function MarkShippedButton({ listingId }: { listingId: string }) {
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
         <Button size="sm" variant="primary">
-          구매자 발송
+          발송 처리
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[720px]">
         <DialogHeader className="border-border border-b pb-4">
           <div className="mb-1.5 flex items-center gap-2">
             <span
-              className="inline-flex items-center rounded-[4px] px-2 py-0.5 text-[11px] font-extrabold tracking-[0.06em]"
+              className="inline-flex items-center rounded-[4px] px-2 py-0.5 text-[12px] font-extrabold tracking-[0.06em]"
               style={{
                 background: 'var(--ticketa-blue-50)',
                 color: 'var(--ticketa-blue-700)',
               }}
             >
-              STATE · verified → shipped
+              상태 · 검수 완료 → 발송 중
             </span>
           </div>
           <DialogTitle className="text-[20px] font-extrabold tracking-[-0.022em]">
             발송 처리
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-[14px]">
-            택배사와 송장번호를 입력해서 매물을 shipped 상태로 전환합니다. 구매자에게 송장 정보가
+            택배사와 송장번호를 입력해서 매물을 발송 중 상태로 전환합니다. 구매자에게 송장 정보가
             알림으로 전송돼요.
           </DialogDescription>
         </DialogHeader>
@@ -270,7 +270,7 @@ export function MarkShippedButton({ listingId }: { listingId: string }) {
               <span className="text-[14px] font-bold">
                 택배사 <span className="text-destructive">*</span>
               </span>
-              <span className="text-muted-foreground text-[12px]">한국 택배사 10종</span>
+              <span className="text-muted-foreground text-[13px]">한국 택배사 10종</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {SHIPPING_CARRIERS.map((c) => (
@@ -292,7 +292,7 @@ export function MarkShippedButton({ listingId }: { listingId: string }) {
               <span className="text-[14px] font-bold">
                 송장번호 <span className="text-destructive">*</span>
               </span>
-              <span className="text-muted-foreground text-[12px]">숫자 / 하이픈만</span>
+              <span className="text-muted-foreground text-[13px]">숫자 / 하이픈만</span>
             </div>
             <div className="relative">
               <input
@@ -306,7 +306,7 @@ export function MarkShippedButton({ listingId }: { listingId: string }) {
               />
               {trackingValid && (
                 <span
-                  className="absolute top-1/2 right-3.5 -translate-y-1/2 rounded-[4px] px-2 py-1 text-[12px] font-extrabold tracking-[0.04em]"
+                  className="absolute top-1/2 right-3.5 -translate-y-1/2 rounded-[4px] px-2 py-1 text-[13px] font-extrabold tracking-[0.04em]"
                   style={{ background: '#1F6B43', color: '#fff' }}
                 >
                   유효
@@ -321,7 +321,7 @@ export function MarkShippedButton({ listingId }: { listingId: string }) {
               <span className="text-[14px] font-bold">
                 발송 메모 <span className="text-muted-foreground font-medium">(선택)</span>
               </span>
-              <span className="text-muted-foreground text-[12px]">구매자에게 노출되지 않음</span>
+              <span className="text-muted-foreground text-[13px]">구매자에게 노출되지 않음</span>
             </div>
             <textarea
               value={memo}
@@ -334,7 +334,7 @@ export function MarkShippedButton({ listingId }: { listingId: string }) {
           </div>
 
           {/* Inline notice */}
-          <div className="border-border bg-warm-50 text-warm-700 flex items-start gap-2.5 rounded-[10px] border px-3.5 py-3 text-[13px] leading-[1.6]">
+          <div className="border-border bg-warm-50 text-warm-700 flex items-start gap-2.5 rounded-[10px] border px-3.5 py-3 text-[14px] leading-[1.6]">
             <svg
               width="16"
               height="16"
@@ -351,7 +351,7 @@ export function MarkShippedButton({ listingId }: { listingId: string }) {
             </svg>
             <span>
               <b className="text-foreground">발송 처리</b>를 누르면 매물이{' '}
-              <b className="text-foreground">shipped</b> 상태로 전환되고 구매자에게 송장 정보가
+              <b className="text-foreground">발송 중</b> 상태로 전환되고 구매자에게 송장 정보가
               알림으로 전송돼요.
             </span>
           </div>
@@ -416,7 +416,7 @@ export function ForceCompleteButton({
             구매자가 인수 확인을 안 한 매물을 어드민이 직접 완료 처리합니다. 판매자에게 정산이 즉시
             지급돼요.
             {daysSinceShipped !== null && (
-              <span className="mt-2 block text-[13px] font-semibold">
+              <span className="mt-2 block text-[14px] font-semibold">
                 발송 후 {daysSinceShipped}일 경과
                 {meetsThreshold ? ' · 정책상 자동완료 가능' : ' · 3일 미만이지만 강제 완료 가능'}
               </span>

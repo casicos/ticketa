@@ -18,7 +18,7 @@ export function DashboardRefreshButton() {
       type="button"
       onClick={refresh}
       disabled={pending}
-      className="border-border hover:bg-warm-50 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-[8px] border bg-white px-3.5 text-[12px] font-bold transition-colors disabled:cursor-wait disabled:opacity-60"
+      className="border-border hover:bg-warm-50 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-[8px] border bg-white px-3.5 text-[13px] font-bold transition-colors disabled:cursor-wait disabled:opacity-60"
     >
       {pending ? '갱신 중…' : '새로고침'}
       <span
