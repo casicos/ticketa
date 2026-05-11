@@ -103,7 +103,7 @@ export function NotificationsBell() {
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <span
-              className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-semibold text-white"
+              className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[12px] font-semibold text-white"
               data-testid="notifications-unread-badge"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -146,7 +146,7 @@ export function NotificationsBell() {
                   )}
                   {item.title}
                 </span>
-                <span className="shrink-0 text-[11px] text-zinc-400">
+                <span className="shrink-0 text-[12px] text-zinc-400">
                   {nowMs > 0 ? formatRelative(item.created_at, nowMs) : ''}
                 </span>
               </div>

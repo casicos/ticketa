@@ -54,7 +54,7 @@ export function GiftInboxActions({
         <button
           type="button"
           onClick={() => setOpen('mileage')}
-          className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] px-4 text-[13px] font-extrabold text-white"
+          className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] px-4 text-[14px] font-extrabold text-white"
           style={{ background: 'linear-gradient(180deg, #1F6B43 0%, #155032 100%)' }}
         >
           <Coins className="size-4" strokeWidth={2.25} />
@@ -63,7 +63,7 @@ export function GiftInboxActions({
         <button
           type="button"
           onClick={() => setOpen('delivery')}
-          className="border-border text-foreground hover:bg-warm-50 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border bg-white px-4 text-[13px] font-extrabold"
+          className="border-border text-foreground hover:bg-warm-50 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border bg-white px-4 text-[14px] font-extrabold"
         >
           <Truck className="size-4" strokeWidth={2.25} />
           현물 배송
@@ -129,10 +129,10 @@ function MileageClaimDialog({
   return (
     <DialogShell title="마일리지로 받기" onClose={onClose}>
       <div className="grid gap-4 px-6 py-5">
-        <div className="border-border bg-warm-50/40 rounded-[10px] border p-4 text-[13px]">
+        <div className="border-border bg-warm-50/40 rounded-[10px] border p-4 text-[14px]">
           <div className="text-muted-foreground">선물</div>
           <div className="mt-1 text-[15px] font-extrabold">{skuLabel}</div>
-          <div className="text-muted-foreground text-[13px]">
+          <div className="text-muted-foreground text-[14px]">
             From <b className="text-foreground">{senderLabel}</b> · {qty.toLocaleString('ko-KR')}매
           </div>
         </div>
@@ -144,7 +144,7 @@ function MileageClaimDialog({
             border: '1px solid rgba(31,107,67,0.20)',
           }}
         >
-          <div className="text-muted-foreground text-[12px] font-bold tracking-[0.08em] uppercase">
+          <div className="text-muted-foreground text-[13px] font-bold tracking-[0.08em] uppercase">
             지급 마일리지
           </div>
           <div
@@ -153,11 +153,11 @@ function MileageClaimDialog({
           >
             +{totalPrice.toLocaleString('ko-KR')}원
           </div>
-          <div className="text-muted-foreground mt-1.5 text-[12px]">
+          <div className="text-muted-foreground mt-1.5 text-[13px]">
             cash 잔액으로 적립 · 즉시 출금 가능
           </div>
         </div>
-        <p className="text-muted-foreground text-[12px]">
+        <p className="text-muted-foreground text-[13px]">
           마일리지로 받으면 보낸 사람에게 알림이 가지 않아요.
         </p>
       </div>
@@ -214,10 +214,10 @@ function DeliveryClaimDialog({
   return (
     <DialogShell title="현물 배송으로 받기" onClose={onClose}>
       <div className="grid gap-4 px-6 py-5">
-        <div className="border-border bg-warm-50/40 rounded-[10px] border p-4 text-[13px]">
+        <div className="border-border bg-warm-50/40 rounded-[10px] border p-4 text-[14px]">
           <div className="text-muted-foreground">선물</div>
           <div className="mt-1 text-[15px] font-extrabold">{skuLabel}</div>
-          <div className="text-muted-foreground text-[13px]">
+          <div className="text-muted-foreground text-[14px]">
             {qty.toLocaleString('ko-KR')}매 — 실물 상품권으로 발송돼요
           </div>
         </div>
@@ -226,12 +226,12 @@ function DeliveryClaimDialog({
           <div className="border-border rounded-[10px] border border-dashed p-6 text-center">
             <MapPin className="text-muted-foreground mx-auto mb-2 size-7" strokeWidth={1.5} />
             <p className="text-[14px] font-bold">등록된 배송지가 없어요</p>
-            <p className="text-muted-foreground mt-1 text-[12px]">
+            <p className="text-muted-foreground mt-1 text-[13px]">
               현물 수령 전에 배송지를 먼저 등록하세요.
             </p>
             <Link
               href="/account/addresses"
-              className="bg-ticketa-blue-500 mt-3 inline-flex h-9 items-center gap-1.5 rounded-[8px] px-3 text-[13px] font-extrabold text-white"
+              className="bg-ticketa-blue-500 mt-3 inline-flex h-9 items-center gap-1.5 rounded-[8px] px-3 text-[14px] font-extrabold text-white"
             >
               <Plus className="size-3.5" strokeWidth={2.25} />
               배송지 등록하기
@@ -240,10 +240,10 @@ function DeliveryClaimDialog({
         ) : (
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
-              <div className="text-[13px] font-bold">배송지 선택</div>
+              <div className="text-[14px] font-bold">배송지 선택</div>
               <Link
                 href="/account/addresses"
-                className="text-ticketa-blue-700 text-[12px] font-bold underline-offset-2 hover:underline"
+                className="text-ticketa-blue-700 text-[13px] font-bold underline-offset-2 hover:underline"
               >
                 관리 →
               </Link>
@@ -261,18 +261,18 @@ function DeliveryClaimDialog({
                     background: active ? 'rgba(91,163,208,0.06)' : 'white',
                   }}
                 >
-                  <div className="flex items-center gap-1.5 text-[13px] font-extrabold">
+                  <div className="flex items-center gap-1.5 text-[14px] font-extrabold">
                     {a.label || a.recipient_name}
                     {a.is_default && (
-                      <span className="bg-ticketa-blue-50 text-ticketa-blue-700 rounded-full px-1.5 py-0.5 text-[10px] font-bold">
+                      <span className="bg-ticketa-blue-50 text-ticketa-blue-700 rounded-full px-1.5 py-0.5 text-[12px] font-bold">
                         기본
                       </span>
                     )}
                   </div>
-                  <div className="text-foreground mt-0.5 text-[12px]">
+                  <div className="text-foreground mt-0.5 text-[13px]">
                     {a.recipient_name} · {a.recipient_phone}
                   </div>
-                  <div className="text-muted-foreground text-[12px]">
+                  <div className="text-muted-foreground text-[13px]">
                     ({a.postal_code}) {a.address1}
                     {a.address2 ? ` ${a.address2}` : ''}
                   </div>
@@ -282,7 +282,7 @@ function DeliveryClaimDialog({
           </div>
         )}
 
-        <p className="text-muted-foreground text-[12px]">
+        <p className="text-muted-foreground text-[13px]">
           어드민 검수 후 1~3일 내 등기 발송돼요. 발송이 시작되면 알림으로 운송장이 안내됩니다.
         </p>
       </div>

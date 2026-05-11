@@ -60,7 +60,7 @@ export function StoreEmpty() {
             ].map((it, i, arr) => (
               <div key={it.n} className="flex flex-1 items-center gap-2">
                 <span
-                  className="flex size-[26px] shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold"
+                  className="flex size-[26px] shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold"
                   style={{
                     background: it.active ? '#D4A24C' : 'var(--warm-100)',
                     color: it.active ? '#fff' : 'var(--warm-700)',
@@ -69,8 +69,8 @@ export function StoreEmpty() {
                   {it.n}
                 </span>
                 <div>
-                  <div className="text-[13px] font-bold">{it.l}</div>
-                  <div className="text-muted-foreground text-[11px]">{it.s}</div>
+                  <div className="text-[14px] font-bold">{it.l}</div>
+                  <div className="text-muted-foreground text-[12px]">{it.s}</div>
                 </div>
                 {i < arr.length - 1 && <span className="text-border ml-auto">›</span>}
               </div>

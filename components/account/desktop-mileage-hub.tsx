@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatLedgerMemo } from '@/lib/format';
 
 type LedgerRow = {
   id: number;
@@ -10,9 +11,12 @@ type LedgerRow = {
 
 type Props = {
   userName: string;
+  /** cash_balance + pg_locked (출금 진행 중 제외, 실제 차감된 후의 보유) */
   total: number;
+  /** 출금 가능 = cash_balance */
   withdrawable: number;
-  pgLocked: number;
+  /** 출금 신청 후 어드민 처리 대기 중인 합계 — 보유 합산에만 반영 */
+  inFlightWithdraw: number;
   ledger: LedgerRow[];
 };
 
@@ -42,7 +46,17 @@ function ledgerStyle(type: string): { bg: string; color: string } {
   }
 }
 
-export function DesktopMileageHub({ userName, total, withdrawable, pgLocked, ledger }: Props) {
+export function DesktopMileageHub({
+  userName,
+  total,
+  withdrawable,
+  inFlightWithdraw,
+  ledger,
+}: Props) {
+  // 보유 마일리지 = 실잔액 + 출금 진행 중 (정산되기 전까지는 보유로 카운트)
+  const heldTotal = total + inFlightWithdraw;
+  // 사용 가능 (매물 매입에 쓸 수 있는) = 실잔액 = cash + pg_locked
+  const spendable = total;
   return (
     <div className="w-full">
       <div className="mb-6">
@@ -67,29 +81,29 @@ export function DesktopMileageHub({ userName, total, withdrawable, pgLocked, led
         />
         <div className="relative flex items-end justify-between gap-6">
           <div>
-            <div className="text-[13px] font-bold tracking-[0.12em] text-[#A8C0FF]">
-              AVAILABLE BALANCE
+            <div className="text-[14px] font-bold tracking-[0.12em] text-[#A8C0FF]">
+              MILEAGE BALANCE
             </div>
             <div className="mt-2 text-[15px] font-semibold text-white/60">
-              {userName}님의 마일리지
+              {userName}님의 보유 마일리지
             </div>
             <div className="mt-1.5 flex items-baseline gap-2">
               <span className="text-5xl leading-none font-black tracking-tight tabular-nums sm:text-6xl">
-                {total.toLocaleString('ko-KR')}
+                {heldTotal.toLocaleString('ko-KR')}
               </span>
               <span className="text-xl font-extrabold text-[#D4A24C]">M</span>
             </div>
-            <div className="mt-2.5 flex gap-5 text-[15px] text-white/55">
+            <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1 text-[14px] text-white/60">
+              <span>
+                사용 가능{' '}
+                <strong className="ml-1 font-bold text-white tabular-nums">
+                  {spendable.toLocaleString('ko-KR')}원
+                </strong>
+              </span>
               <span>
                 출금 가능{' '}
                 <strong className="ml-1 font-bold text-white tabular-nums">
                   {withdrawable.toLocaleString('ko-KR')}원
-                </strong>
-              </span>
-              <span>
-                거래 잠김{' '}
-                <strong className="ml-1 font-bold text-white tabular-nums">
-                  {pgLocked.toLocaleString('ko-KR')}원
                 </strong>
               </span>
             </div>
@@ -232,8 +246,10 @@ export function DesktopMileageHub({ userName, total, withdrawable, pgLocked, led
                       {ledgerIcon(r.type)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[15px] font-bold tracking-tight">{r.memo ?? r.type}</div>
-                      <div className="text-muted-foreground mt-0.5 font-mono text-[13px]">
+                      <div className="text-[15px] font-bold tracking-tight">
+                        {formatLedgerMemo(r.memo, r.type)}
+                      </div>
+                      <div className="text-muted-foreground mt-0.5 font-mono text-[14px]">
                         {new Date(r.created_at).toLocaleDateString('ko-KR')}
                       </div>
                     </div>
@@ -243,7 +259,7 @@ export function DesktopMileageHub({ userName, total, withdrawable, pgLocked, led
                     >
                       {r.amount > 0 ? '+' : ''}
                       {r.amount.toLocaleString('ko-KR')}
-                      <span className="text-muted-foreground ml-0.5 text-[13px] font-semibold">
+                      <span className="text-muted-foreground ml-0.5 text-[14px] font-semibold">
                         M
                       </span>
                     </span>

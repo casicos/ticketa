@@ -221,7 +221,7 @@ export function DesktopAgentInbound({ className }: { className?: string }) {
         <div className="flex flex-col gap-3.5">
           {/* Summary card */}
           <div className="rounded-xl border bg-white p-5">
-            <div className="text-ticketa-gold-700 mb-2.5 text-[13px] font-extrabold tracking-widest uppercase">
+            <div className="text-ticketa-gold-700 mb-2.5 text-[14px] font-extrabold tracking-widest uppercase">
               입고 요약
             </div>
             <div className="flex items-center gap-3 border-b border-dashed pb-3">
@@ -291,7 +291,7 @@ export function DesktopAgentInbound({ className }: { className?: string }) {
 
           {/* Recent requests */}
           <div className="rounded-xl border bg-white p-4">
-            <div className="text-muted-foreground mb-2 text-[13px] font-extrabold tracking-wider uppercase">
+            <div className="text-muted-foreground mb-2 text-[14px] font-extrabold tracking-wider uppercase">
               최근 입고 신청
             </div>
             <div className="flex flex-col gap-2">
@@ -301,7 +301,7 @@ export function DesktopAgentInbound({ className }: { className?: string }) {
                     className={`inline-block size-1.5 shrink-0 rounded-full ${TONE_DOT[r.tone]}`}
                   />
                   <span className="flex-1 font-semibold">{r.label}</span>
-                  <span className="text-muted-foreground text-[13px]">
+                  <span className="text-muted-foreground text-[14px]">
                     {r.date} · {r.statusLabel}
                   </span>
                 </div>
@@ -327,7 +327,7 @@ function InboundField({
 }) {
   return (
     <div className="mb-3.5">
-      <div className="text-warm-700 mb-1.5 text-[13px] font-extrabold tracking-wide">
+      <div className="text-warm-700 mb-1.5 text-[14px] font-extrabold tracking-wide">
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </div>

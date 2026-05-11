@@ -53,7 +53,7 @@ export function StoreForm({
           placeholder="예: 컬쳐 상품권"
           className="border-border focus:border-ticketa-blue-500 focus:ring-ticketa-blue-50 h-11 w-full rounded-[10px] border bg-white px-3.5 text-[15px] font-semibold outline-none focus:ring-3"
         />
-        <div className="text-muted-foreground mt-1 flex justify-between text-[13px]">
+        <div className="text-muted-foreground mt-1 flex justify-between text-[14px]">
           <span>2~20자, 다른 에이전트와 중복 불가</span>
           <span className="tabular-nums">{name.length}/20</span>
         </div>
@@ -71,7 +71,7 @@ export function StoreForm({
           placeholder="예: 빠른 배송, 검수 끝난 상품권만 취급해요"
           className="border-border focus:border-ticketa-blue-500 focus:ring-ticketa-blue-50 h-11 w-full rounded-[10px] border bg-white px-3.5 text-[15px] outline-none focus:ring-3"
         />
-        <div className="text-muted-foreground mt-1 flex justify-end text-[13px] tabular-nums">
+        <div className="text-muted-foreground mt-1 flex justify-end text-[14px] tabular-nums">
           {intro.length}/60
         </div>
       </div>
@@ -84,7 +84,7 @@ export function StoreForm({
         {pending ? '저장 중…' : '저장'}
       </button>
 
-      <p className="text-muted-foreground text-[13px]">
+      <p className="text-muted-foreground text-[14px]">
         상점명은 카탈로그 매물 카드와 상점 페이지에 노출돼요. 로고/배너 등 추가 브랜딩은 곧
         제공돼요.
       </p>

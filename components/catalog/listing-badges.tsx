@@ -55,7 +55,7 @@ export function VerifiedBadge({
           strokeLinejoin="round"
         />
       </svg>
-      <span>[{label}]</span>
+      <span>{label}</span>
     </span>
   );
 }

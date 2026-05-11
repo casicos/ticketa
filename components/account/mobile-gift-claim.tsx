@@ -67,7 +67,7 @@ export function MobileGiftClaim({ className }: { className?: string }) {
               }}
             />
 
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#11161E] px-2.5 py-1 text-[11px] font-extrabold tracking-widest text-[#FAD08A]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#11161E] px-2.5 py-1 text-[12px] font-extrabold tracking-widest text-[#FAD08A]">
               🎁 GIFT
             </span>
             <div className="text-warm-700 mt-3.5 text-sm font-bold">{g.senderName}님이 보낸</div>
@@ -91,7 +91,7 @@ export function MobileGiftClaim({ className }: { className?: string }) {
               </div>
               <div className="text-base font-black tabular-nums">
                 {g.faceValue.toLocaleString('ko-KR')}
-                <span className="text-muted-foreground ml-0.5 text-[11px] font-bold">원</span>
+                <span className="text-muted-foreground ml-0.5 text-[12px] font-bold">원</span>
               </div>
             </div>
 
@@ -104,7 +104,7 @@ export function MobileGiftClaim({ className }: { className?: string }) {
                 borderStyle: 'dashed',
               }}
             >
-              <div className="text-ticketa-gold-700 mb-1.5 text-[11px] font-extrabold tracking-widest uppercase">
+              <div className="text-ticketa-gold-700 mb-1.5 text-[12px] font-extrabold tracking-widest uppercase">
                 FROM {g.senderName}
               </div>
               <p className="text-sm leading-snug font-semibold text-[#3F2A0A]">{g.message}</p>
@@ -131,11 +131,11 @@ export function MobileGiftClaim({ className }: { className?: string }) {
                   🎫
                 </span>
                 <span className="text-sm font-extrabold">실물 카드로 받기</span>
-                <span className="bg-ticketa-gold-100 text-ticketa-gold-700 inline-flex items-center rounded-sm px-1.5 py-0.5 text-[10px] font-bold">
+                <span className="bg-ticketa-gold-100 text-ticketa-gold-700 inline-flex items-center rounded-sm px-1.5 py-0.5 text-[12px] font-bold">
                   추천
                 </span>
                 <span
-                  className="ml-auto inline-flex size-[18px] items-center justify-center rounded-full text-[11px] font-extrabold text-white"
+                  className="ml-auto inline-flex size-[18px] items-center justify-center rounded-full text-[12px] font-extrabold text-white"
                   style={{ background: 'var(--ticketa-gold-700)' }}
                 >
                   ✓

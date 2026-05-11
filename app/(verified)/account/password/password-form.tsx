@@ -183,13 +183,13 @@ export function PasswordForm() {
                 <div className="flex items-center gap-1.5">
                   <span className="text-[15px] font-bold">{item.d}</span>
                   {item.cur && (
-                    <span className="bg-success/12 text-success rounded-[3px] px-1.5 py-0.5 text-[11px] font-extrabold">
+                    <span className="bg-success/12 text-success rounded-[3px] px-1.5 py-0.5 text-[12px] font-extrabold">
                       현재
                     </span>
                   )}
                   {item.warn && (
                     <span
-                      className="rounded-[3px] px-1.5 py-0.5 text-[11px] font-extrabold"
+                      className="rounded-[3px] px-1.5 py-0.5 text-[12px] font-extrabold"
                       style={{
                         background: 'rgba(212,162,76,0.18)',
                         color: 'var(--ticketa-gold-700)',
@@ -199,7 +199,7 @@ export function PasswordForm() {
                     </span>
                   )}
                 </div>
-                <div className="text-muted-foreground mt-0.5 text-[13px]">
+                <div className="text-muted-foreground mt-0.5 text-[14px]">
                   {item.loc} · {item.t}
                 </div>
               </div>
@@ -243,7 +243,7 @@ function PwField({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 border-0 bg-transparent text-[13px] font-semibold tracking-[0.05em] outline-none"
+          className="flex-1 border-0 bg-transparent text-[14px] font-semibold tracking-[0.05em] outline-none"
         />
         <button
           type="button"

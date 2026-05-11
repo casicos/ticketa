@@ -38,7 +38,7 @@ export default function PrivacyPage() {
     <div className="bg-background min-h-screen">
       <div className="mx-auto max-w-[1100px] px-8 py-8 pb-16">
         {/* Header */}
-        <div className="text-ticketa-blue-700 text-[13px] font-bold tracking-[0.12em]">
+        <div className="text-ticketa-blue-700 text-[14px] font-bold tracking-[0.12em]">
           PRIVACY POLICY
         </div>
         <h1 className="mt-1.5 text-[30px] font-extrabold tracking-[-0.022em]">개인정보처리방침</h1>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
           {/* TOC sidebar */}
           <aside className="self-start md:sticky md:top-20">
             <div className="border-border rounded-xl border bg-white p-2">
-              <div className="text-muted-foreground px-2.5 pt-0.5 pb-2 text-[13px] font-bold tracking-[0.05em] uppercase">
+              <div className="text-muted-foreground px-2.5 pt-0.5 pb-2 text-[14px] font-bold tracking-[0.05em] uppercase">
                 목차
               </div>
               {NAV.map((n, i) => (
@@ -214,7 +214,7 @@ export default function PrivacyPage() {
               </p>
               <div className="border-border mb-3 overflow-hidden rounded-md border">
                 <table className="text-warm-700 w-full text-[14px]">
-                  <thead className="bg-warm-50 text-warm-500 text-[13px] font-bold tracking-[0.04em] uppercase">
+                  <thead className="bg-warm-50 text-warm-500 text-[14px] font-bold tracking-[0.04em] uppercase">
                     <tr>
                       <th className="px-3 py-2 text-left">수탁자</th>
                       <th className="px-3 py-2 text-left">위탁 업무</th>
@@ -293,7 +293,7 @@ export default function PrivacyPage() {
                 </li>
                 <li>
                   <strong>감사 로그</strong>: 어드민의 민감정보 열람·상태 변경 이력은 모두 기록(
-                  <code className="font-mono text-[13px]">audit_events</code> 테이블) — 회원 요청 시
+                  <code className="font-mono text-[14px]">audit_events</code> 테이블) — 회원 요청 시
                   관련 조회 이력 제공 가능
                 </li>
                 <li>
@@ -439,7 +439,7 @@ function Row({ x, y, z }: { x: string; y: string; z: string }) {
     <tr className="border-border border-t">
       <td className="px-3 py-2 align-top font-semibold">{x}</td>
       <td className="px-3 py-2 align-top">{y}</td>
-      <td className="text-muted-foreground px-3 py-2 align-top text-[13px]">{z}</td>
+      <td className="text-muted-foreground px-3 py-2 align-top text-[14px]">{z}</td>
     </tr>
   );
 }

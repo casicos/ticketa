@@ -26,11 +26,11 @@ export function MobileCatalog({
       <div className="border-border mx-4 mt-2 mb-3 flex flex-col gap-1.5 rounded-[10px] border bg-white px-3 py-2.5">
         <div className="flex items-center gap-1.5">
           <VerifiedBadge size="sm" />
-          <span className="text-warm-700 text-[12px]">관리자 검수 — 결제 즉시 발송</span>
+          <span className="text-warm-700 text-[13px]">관리자 검수 — 결제 즉시 발송</span>
         </div>
         <div className="flex items-center gap-1.5">
           <StoreNameLabel name="공식 상점" size="sm" />
-          <span className="text-warm-700 text-[12px]">에이전트 직영 매물</span>
+          <span className="text-warm-700 text-[13px]">에이전트 직영 매물</span>
         </div>
       </div>
 

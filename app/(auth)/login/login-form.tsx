@@ -80,8 +80,8 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
             onClick={() => setAutoLogin((v) => !v)}
             className={
               autoLogin
-                ? 'border-ticketa-blue-500 bg-ticketa-blue-500 inline-flex size-4 items-center justify-center rounded-[4px] border-[1.5px] text-[11px] font-extrabold text-white'
-                : 'border-input inline-flex size-4 items-center justify-center rounded-[4px] border-[1.5px] bg-white text-[11px] font-extrabold text-transparent'
+                ? 'border-ticketa-blue-500 bg-ticketa-blue-500 inline-flex size-4 items-center justify-center rounded-[4px] border-[1.5px] text-[12px] font-extrabold text-white'
+                : 'border-input inline-flex size-4 items-center justify-center rounded-[4px] border-[1.5px] bg-white text-[12px] font-extrabold text-transparent'
             }
           >
             ✓
@@ -94,7 +94,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           />
           이 기기에서 자동 로그인
         </label>
-        <span className="text-muted-foreground text-[13px]">공용 PC라면 해제하세요</span>
+        <span className="text-muted-foreground text-[14px]">공용 PC라면 해제하세요</span>
       </div>
 
       {serverError && (

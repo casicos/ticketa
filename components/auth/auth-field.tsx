@@ -39,8 +39,8 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(func
         )}
         {...inputProps}
       />
-      {hint && !error && <p className="text-muted-foreground text-[13px]">{hint}</p>}
-      {error && <p className="text-destructive text-[13px] font-semibold">{error}</p>}
+      {hint && !error && <p className="text-muted-foreground text-[14px]">{hint}</p>}
+      {error && <p className="text-destructive text-[14px] font-semibold">{error}</p>}
     </div>
   );
 });

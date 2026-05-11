@@ -46,7 +46,7 @@ export default async function LoginPage({
         <LogoLockup symbolSize={32} wordmarkHeight={20} color="#fff" />
 
         <div className="mt-auto max-w-[460px]">
-          <div className="text-[13px] font-bold tracking-[0.12em]" style={{ color: '#E5C387' }}>
+          <div className="text-[14px] font-bold tracking-[0.12em]" style={{ color: '#E5C387' }}>
             SAFE EXCHANGE
           </div>
           <h1 className="mt-3 text-[38px] leading-[1.18] font-extrabold tracking-[-0.025em]">
@@ -68,7 +68,7 @@ export default async function LoginPage({
             ).map(([k, v]) => (
               <div key={k}>
                 <div
-                  className="text-[13px] font-bold tracking-[0.06em]"
+                  className="text-[14px] font-bold tracking-[0.06em]"
                   style={{ color: 'rgba(255,255,255,0.5)' }}
                 >
                   {k.toUpperCase()}
@@ -92,7 +92,7 @@ export default async function LoginPage({
         </div>
 
         <div className="w-full lg:mx-auto lg:max-w-[400px]">
-          <div className="text-ticketa-blue-700 text-[13px] font-bold tracking-[0.12em]">
+          <div className="text-ticketa-blue-700 text-[14px] font-bold tracking-[0.12em]">
             LOG IN
           </div>
           <h2 className="mt-2 text-[28px] font-extrabold tracking-[-0.022em]">

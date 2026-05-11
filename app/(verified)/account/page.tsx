@@ -111,13 +111,13 @@ export default async function AccountPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span
-                className="text-[13px] font-bold tracking-[0.08em]"
+                className="text-[14px] font-bold tracking-[0.08em]"
                 style={{ color: '#E5C387' }}
               >
                 MEMBER
               </span>
               <span
-                className="rounded px-2 py-0.5 text-[13px] font-bold"
+                className="rounded px-2 py-0.5 text-[14px] font-bold"
                 style={{
                   background: 'rgba(255,255,255,0.10)',
                   color: 'rgba(255,255,255,0.7)',
@@ -153,7 +153,7 @@ export default async function AccountPage() {
               <span className="text-base opacity-70">M</span>
             </div>
             {mileage && mileage.pgLocked > 0 && (
-              <div className="mt-1 text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <div className="mt-1 text-[14px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 · 출금 가능 {formatKRW(mileage.withdrawable)} · 거래 후 정산{' '}
                 {formatKRW(mileage.pgLocked)}
               </div>
@@ -212,7 +212,7 @@ export default async function AccountPage() {
       {/* Hint card */}
       <section className="border-border mt-6 rounded-2xl border bg-white p-5">
         <div className="text-[15px] font-bold tracking-[-0.012em]">최근 거래내역</div>
-        <p className="text-muted-foreground mt-2 text-[13px]">
+        <p className="text-muted-foreground mt-2 text-[14px]">
           상세 내역은{' '}
           <Link
             href="/account/mileage"
@@ -254,7 +254,7 @@ function TradeBanner({
       >
         <span>{kicker}</span>
         {total > 0 && (
-          <span className="ml-2 text-[13px] font-semibold tabular-nums opacity-80">
+          <span className="ml-2 text-[14px] font-semibold tabular-nums opacity-80">
             누적 {total}건
           </span>
         )}
@@ -264,7 +264,7 @@ function TradeBanner({
         {cols.map(([label, value], i) => (
           <div key={label} className="relative text-center">
             {i > 0 && <div className="bg-border absolute inset-y-1.5 left-0 w-px" />}
-            <div className="text-muted-foreground text-[13px]">{label}</div>
+            <div className="text-muted-foreground text-[14px]">{label}</div>
             <div
               className={`mt-1 text-[22px] font-extrabold tracking-[-0.018em] tabular-nums ${
                 value > 0 ? 'text-foreground' : 'text-muted-foreground'

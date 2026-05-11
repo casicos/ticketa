@@ -3,52 +3,61 @@
 import { useState } from 'react';
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatKRW } from '@/lib/format';
+import { formatKRW, koreanNumberWord } from '@/lib/format';
+import { BankMark } from '@/components/ticketa/bank-mark';
+import { bankNameByCode, bankBrandColor } from '@/lib/domain/banks';
+import { WithdrawAccountDialog } from '@/components/account/withdraw-account-dialog';
 
-const WITHDRAW_FEE = 1000;
+export type WithdrawAccountOption = {
+  id: string;
+  bank_code: string;
+  account_number_last4: string;
+  account_holder: string;
+};
 
-const BANKS = [
-  { code: '004', name: '국민은행' },
-  { code: '088', name: '신한은행' },
-  { code: '020', name: '우리은행' },
-  { code: '081', name: '하나은행' },
-  { code: '003', name: '기업은행' },
-  { code: '032', name: '부산은행' },
-  { code: '034', name: '광주은행' },
-  { code: '045', name: '새마을금고' },
-  { code: '007', name: '수협' },
-  { code: '011', name: '농협' },
-  { code: '071', name: '우체국' },
-  { code: '089', name: '케이뱅크' },
-  { code: '090', name: '카카오뱅크' },
-  { code: '092', name: '토스뱅크' },
-];
+type AnyHistoryRow = unknown;
 
 export interface MobileMileageWithdrawProps {
   totalBalance: number;
   withdrawable: number;
   pgLocked: number;
+  inFlightWithdraw: number;
   defaultHolder: string;
   formAction: string;
   hasError?: boolean;
   errorMessage?: string;
+  accounts: WithdrawAccountOption[];
+  withdrawFee: number;
+  /** 모바일은 별도 history 탭이 없어 마이룸 허브에서 노출 — prop 은 인터페이스 호환용. */
+  history?: AnyHistoryRow[];
   className?: string;
 }
 
 export function MobileMileageWithdraw({
   totalBalance,
   withdrawable,
-  pgLocked,
+  pgLocked: _pgLocked,
+  inFlightWithdraw,
   defaultHolder,
   formAction,
   hasError,
   errorMessage,
+  accounts,
+  withdrawFee,
   className,
 }: MobileMileageWithdrawProps) {
   const [tab, setTab] = useState<'bank' | 'phone'>('bank');
   const [requested, setRequested] = useState<number>(Math.min(withdrawable, 500000));
-  const net = Math.max(requested - WITHDRAW_FEE, 0);
+  const [amountFocused, setAmountFocused] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id ?? '');
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const net = Math.max(requested - withdrawFee, 0);
   const hasWithdrawable = withdrawable > 0;
+  const amountDisplay = amountFocused
+    ? requested === 0
+      ? ''
+      : String(requested)
+    : requested.toLocaleString('ko-KR');
 
   return (
     <div className={cn('md:hidden', className)}>
@@ -85,19 +94,24 @@ export function MobileMileageWithdraw({
         <div className="border-border rounded-xl border bg-white p-3.5 text-[14px]">
           <div className="flex justify-between">
             <span className="text-muted-foreground">총 마일리지</span>
-            <span className="font-bold tabular-nums">{totalBalance.toLocaleString()} M</span>
+            <span className="font-bold tabular-nums">
+              {(totalBalance + inFlightWithdraw).toLocaleString('ko-KR')} M
+            </span>
           </div>
           <div className="border-border mt-2 flex justify-between border-t border-dashed pt-2">
             <span className="text-muted-foreground">출금가능 마일리지</span>
             <span className="text-destructive font-extrabold tabular-nums">
-              {withdrawable.toLocaleString()} M
+              {withdrawable.toLocaleString('ko-KR')} M
             </span>
           </div>
-          {pgLocked > 0 && (
-            <div className="mt-1 flex justify-between text-[13px]">
-              <span className="text-muted-foreground">거래 대기 (출금 불가)</span>
-              <span className="text-muted-foreground tabular-nums">
-                {pgLocked.toLocaleString()} M
+          {inFlightWithdraw > 0 && (
+            <div className="mt-1 flex justify-between text-[14px]">
+              <span className="text-muted-foreground">출금 진행 중</span>
+              <span
+                className="font-semibold tabular-nums"
+                style={{ color: 'var(--ticketa-blue-700)' }}
+              >
+                {inFlightWithdraw.toLocaleString('ko-KR')} M
               </span>
             </div>
           )}
@@ -107,81 +121,108 @@ export function MobileMileageWithdraw({
       {tab === 'bank' &&
         (hasWithdrawable ? (
           <form action={formAction}>
-            {/* Bank / account fields */}
-            <div className="space-y-3 px-4 pt-4">
-              <div>
-                <label className="mb-1.5 block text-[14px] font-bold">은행</label>
-                <select
-                  name="bank_code"
-                  required
-                  defaultValue=""
-                  className="border-border focus:border-ticketa-blue-500 h-10 w-full rounded-[10px] border bg-white px-3 text-[15px] outline-none"
+            {/* Account selector */}
+            <div className="space-y-2 px-4 pt-4">
+              <div className="flex items-center justify-between">
+                <label className="text-[14px] font-bold">입금 받을 계좌</label>
+                <button
+                  type="button"
+                  onClick={() => setShowAddDialog(true)}
+                  className="text-ticketa-blue-700 text-[13px] font-bold"
                 >
-                  <option value="" disabled>
-                    은행을 선택해주세요
-                  </option>
-                  {BANKS.map((b) => (
-                    <option key={b.code} value={b.code}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                  + 새 계좌 등록
+                </button>
               </div>
-              <div>
-                <label className="mb-1.5 block text-[14px] font-bold">계좌번호</label>
-                <input
-                  name="account_number"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d{10,16}"
-                  maxLength={16}
-                  placeholder="숫자만 입력 (10~16자리)"
-                  required
-                  className="border-border focus:border-ticketa-blue-500 h-10 w-full rounded-[10px] border bg-white px-3 text-[15px] tabular-nums outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[14px] font-bold">예금주</label>
-                <input
-                  name="account_holder"
-                  type="text"
-                  defaultValue={defaultHolder}
-                  maxLength={40}
-                  required
-                  className="border-border focus:border-ticketa-blue-500 h-10 w-full rounded-[10px] border bg-white px-3 text-[15px] outline-none"
-                />
+              <input type="hidden" name="account_id" value={selectedAccountId} />
+              <div className="space-y-1.5">
+                {accounts.map((a) => {
+                  const selected = a.id === selectedAccountId;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setSelectedAccountId(a.id)}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-[10px] border-[1.5px] px-3 py-2.5 text-left transition-colors',
+                        selected
+                          ? 'border-ticketa-blue-500 bg-ticketa-blue-50'
+                          : 'border-border bg-white',
+                      )}
+                    >
+                      <BankMark
+                        name={bankNameByCode(a.bank_code)}
+                        brandColor={bankBrandColor(a.bank_code)}
+                        size="md"
+                      />
+                      <div className="flex-1">
+                        <div className="text-[14px] font-bold">
+                          {bankNameByCode(a.bank_code)}{' '}
+                          <span className="text-muted-foreground font-mono text-[12px]">
+                            ****{a.account_number_last4}
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground text-[12px]">
+                          예금주 {a.account_holder}
+                        </div>
+                      </div>
+                      {selected && (
+                        <span className="text-ticketa-blue-700 text-[12px] font-extrabold">
+                          선택됨
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Amount input */}
             <div className="px-4 pt-4">
-              <div className="flex items-center gap-2">
-                <input
-                  name="amount"
-                  type="number"
-                  min={1000}
-                  max={withdrawable}
-                  value={requested}
-                  onChange={(e) => setRequested(Number(e.target.value))}
-                  className="border-ticketa-blue-500 h-11 flex-1 rounded-[10px] border bg-white px-3 text-right text-[14px] font-extrabold tabular-nums outline-none"
-                />
-                <span className="text-muted-foreground text-[14px]">원</span>
+              <div className="flex items-start gap-2">
+                <input type="hidden" name="amount" value={String(requested)} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      value={amountDisplay}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/[^\d]/g, '');
+                        setRequested(cleaned === '' ? 0 : Number(cleaned));
+                      }}
+                      onFocus={() => setAmountFocused(true)}
+                      onBlur={() => {
+                        setAmountFocused(false);
+                        if (requested > withdrawable) setRequested(withdrawable);
+                      }}
+                      className="border-ticketa-blue-500 h-11 flex-1 rounded-[10px] border bg-white px-3 text-right text-[14px] font-extrabold tabular-nums outline-none"
+                    />
+                    <span className="text-muted-foreground text-[14px]">원</span>
+                  </div>
+                  <div
+                    className="text-muted-foreground mt-1 min-h-[16px] pr-[18px] text-right text-[13px]"
+                    aria-live="polite"
+                  >
+                    {!amountFocused && requested > 0 ? `${koreanNumberWord(requested)}원` : ''}
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setRequested(withdrawable)}
-                  className="bg-ticketa-blue-500 h-11 rounded-[10px] px-3.5 text-[14px] font-bold text-white"
+                  className="bg-ticketa-blue-500 h-11 shrink-0 rounded-[10px] px-3.5 text-[14px] font-bold text-white"
                 >
                   전액
                 </button>
               </div>
-              <div className="bg-ticketa-blue-50 mt-3 flex items-center justify-between rounded-[10px] px-3 py-2.5">
+              <div className="bg-ticketa-blue-50 mt-2 flex items-center justify-between rounded-[10px] px-3 py-2.5">
                 <span className="text-ticketa-blue-700 text-[14px] font-bold">실 출금액</span>
                 <span className="text-ticketa-blue-700 text-[14px] font-extrabold tabular-nums">
-                  {net.toLocaleString()} 원
+                  {net.toLocaleString('ko-KR')} 원
                 </span>
               </div>
               <p className="text-muted-foreground mt-1 text-right text-[14px]">
-                출금 수수료 {formatKRW(WITHDRAW_FEE)}
+                출금 수수료 {formatKRW(withdrawFee)}
               </p>
             </div>
 
@@ -191,7 +232,7 @@ export function MobileMileageWithdraw({
                 <Shield className="text-ticketa-blue-500 size-3.5" strokeWidth={1.75} />
                 알아두기
               </div>
-              <ul className="text-muted-foreground list-disc space-y-1 pl-3.5 text-[13px] leading-relaxed">
+              <ul className="text-muted-foreground list-disc space-y-1 pl-3.5 text-[14px] leading-relaxed">
                 <li>본인 명의 계좌가 아니면 출금 불가</li>
                 <li>출금은 평일 01:00 ~ 22:50 (우체국은 05:00 ~)</li>
                 <li>일반 회원은 출금 시 1,000원 수수료 부과</li>
@@ -222,6 +263,13 @@ export function MobileMileageWithdraw({
         <div className="border-border text-muted-foreground mx-4 mt-4 rounded-xl border bg-white p-5 text-center text-[15px]">
           휴대폰번호 출금 준비 중이에요.
         </div>
+      )}
+
+      {showAddDialog && (
+        <WithdrawAccountDialog
+          defaultHolder={defaultHolder}
+          onClose={() => setShowAddDialog(false)}
+        />
       )}
     </div>
   );

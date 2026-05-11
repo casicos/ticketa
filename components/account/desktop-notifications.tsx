@@ -207,7 +207,7 @@ function ChannelCard({
               <div className="flex items-center gap-1.5">
                 <span className="text-[15px] font-semibold">{it.label}</span>
                 {it.required && (
-                  <span className="bg-destructive/10 text-destructive rounded px-1 py-px text-[10px] font-extrabold tracking-wider">
+                  <span className="bg-destructive/10 text-destructive rounded px-1 py-px text-[12px] font-extrabold tracking-wider">
                     필수
                   </span>
                 )}

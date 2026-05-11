@@ -17,7 +17,7 @@ export function TrustStripCard({
 
   return (
     <div className="border-border flex flex-col gap-1 rounded-xl border bg-white px-4 py-3.5">
-      <span className={`text-[13px] font-bold tracking-[0.06em] uppercase ${kickerColor}`}>
+      <span className={`text-[14px] font-bold tracking-[0.06em] uppercase ${kickerColor}`}>
         {kicker}
       </span>
       <span className="text-foreground text-base font-extrabold tracking-tight">{value}</span>

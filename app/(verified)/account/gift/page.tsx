@@ -161,7 +161,7 @@ export default async function GiftPage({
               보낸 선물
             </TabLink>
           </div>
-          <div className="text-muted-foreground flex items-center gap-4 pb-2 text-[13px] tabular-nums">
+          <div className="text-muted-foreground flex items-center gap-4 pb-2 text-[14px] tabular-nums">
             {tab === 'inbox' && unclaimedCount > 0 && (
               <span>
                 수령 대기{' '}
@@ -201,28 +201,28 @@ export default async function GiftPage({
                       <div className="mb-1 flex flex-wrap items-center gap-2">
                         <span className="text-[15px] font-extrabold">{skuLabel}</span>
                         <span
-                          className="rounded-full px-2 py-0.5 text-[11px] font-extrabold"
+                          className="rounded-full px-2 py-0.5 text-[12px] font-extrabold"
                           style={{ color: meta.color, background: meta.bg }}
                         >
                           {meta.label}
                         </span>
                       </div>
-                      <div className="text-muted-foreground text-[13px]">
+                      <div className="text-muted-foreground text-[14px]">
                         {tab === 'inbox' ? 'From' : 'To'}{' '}
                         <span className="text-foreground font-bold">{counterparty}</span>
                         {tab === 'outbox' && r.recipient?.nickname && (
-                          <span className="ml-1 font-mono text-[12px]">
+                          <span className="ml-1 font-mono text-[13px]">
                             (@{r.recipient.nickname})
                           </span>
                         )}
                         <span className="ml-2">· {formatDate(r.sent_at)}</span>
                       </div>
                       {r.message && (
-                        <div className="bg-warm-50 text-foreground mt-2 rounded-[8px] px-3 py-2 text-[13px] italic">
+                        <div className="bg-warm-50 text-foreground mt-2 rounded-[8px] px-3 py-2 text-[14px] italic">
                           &ldquo;{r.message}&rdquo;
                         </div>
                       )}
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-[13px] tabular-nums">
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-[14px] tabular-nums">
                         <span>
                           수량 <b>{r.qty.toLocaleString('ko-KR')}매</b>
                         </span>
@@ -235,7 +235,7 @@ export default async function GiftPage({
                         </span>
                       </div>
                       {r.shipping_carrier && r.tracking_no && (
-                        <div className="text-muted-foreground mt-2 text-[12px] tabular-nums">
+                        <div className="text-muted-foreground mt-2 text-[13px] tabular-nums">
                           🚚 {r.shipping_carrier} · 운송장 {r.tracking_no}
                         </div>
                       )}

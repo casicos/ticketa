@@ -133,7 +133,7 @@ export function VerifyPhoneForm({
       />
 
       {error && (
-        <p className="text-destructive text-[13px] font-semibold" role="alert">
+        <p className="text-destructive text-[14px] font-semibold" role="alert">
           {error}
         </p>
       )}
@@ -143,7 +143,7 @@ export function VerifyPhoneForm({
         <span className="bg-ticketa-blue-50 text-ticketa-blue-700 inline-flex size-[22px] shrink-0 items-center justify-center rounded-full">
           <Info className="size-[14px]" strokeWidth={2.25} />
         </span>
-        <div className="text-muted-foreground text-[13px] leading-[1.6]">
+        <div className="text-muted-foreground text-[14px] leading-[1.6]">
           <strong className="text-foreground font-bold">왜 본인인증이 필요한가요?</strong>
           <br />
           중고 상품권 거래는 명의 도용·차명 거래 위험이 높아요. 인증된 회원만 거래·출금할 수 있어

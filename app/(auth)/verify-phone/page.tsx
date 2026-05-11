@@ -59,7 +59,7 @@ export default async function VerifyPhonePage({
         <LogoLockup symbolSize={32} wordmarkHeight={20} color="#fff" />
 
         <div className="mt-auto max-w-[460px]">
-          <div className="text-[13px] font-bold tracking-[0.12em]" style={{ color: '#E5C387' }}>
+          <div className="text-[14px] font-bold tracking-[0.12em]" style={{ color: '#E5C387' }}>
             SAFE EXCHANGE
           </div>
           <h1 className="mt-3 text-[38px] leading-[1.18] font-extrabold tracking-[-0.025em]">
@@ -84,7 +84,7 @@ export default async function VerifyPhonePage({
         </div>
 
         <div className="w-full lg:mx-auto lg:max-w-[420px]">
-          <div className="text-ticketa-blue-700 text-[13px] font-bold tracking-[0.12em]">
+          <div className="text-ticketa-blue-700 text-[14px] font-bold tracking-[0.12em]">
             SIGN UP · 2/2
           </div>
           <h2 className="mt-2 text-[28px] font-extrabold tracking-[-0.022em]">
@@ -95,23 +95,23 @@ export default async function VerifyPhonePage({
           </p>
 
           {/* Step indicator */}
-          <div className="mt-6 mb-7 flex items-center gap-2 text-[13px] font-bold tracking-[0.02em]">
+          <div className="mt-6 mb-7 flex items-center gap-2 text-[14px] font-bold tracking-[0.02em]">
             <div className="text-ticketa-blue-700 flex items-center gap-1.5">
-              <span className="bg-ticketa-blue-500 inline-flex size-[22px] items-center justify-center rounded-full text-[13px] font-extrabold text-white">
+              <span className="bg-ticketa-blue-500 inline-flex size-[22px] items-center justify-center rounded-full text-[14px] font-extrabold text-white">
                 ✓
               </span>
               <span className="hidden sm:inline">가입 정보</span>
             </div>
             <div className="bg-ticketa-blue-500 h-0.5 flex-1" />
             <div className="text-ticketa-blue-700 flex items-center gap-1.5">
-              <span className="bg-ticketa-blue-500 inline-flex size-[22px] items-center justify-center rounded-full text-[13px] font-extrabold text-white">
+              <span className="bg-ticketa-blue-500 inline-flex size-[22px] items-center justify-center rounded-full text-[14px] font-extrabold text-white">
                 2
               </span>
               <span className="hidden sm:inline">본인인증</span>
             </div>
             <div className="bg-muted h-0.5 flex-1" />
             <div className="text-muted-foreground flex items-center gap-1.5">
-              <span className="bg-muted inline-flex size-[22px] items-center justify-center rounded-full text-[13px] font-extrabold">
+              <span className="bg-muted inline-flex size-[22px] items-center justify-center rounded-full text-[14px] font-extrabold">
                 3
               </span>
               <span className="hidden sm:inline">완료</span>

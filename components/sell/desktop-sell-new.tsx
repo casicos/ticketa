@@ -38,21 +38,21 @@ export function DesktopSellNew({ skus, className }: DesktopSellNewProps) {
           {/* Step indicator */}
           <div className="mb-5 flex items-center gap-2.5">
             <div className="flex items-center gap-2">
-              <span className="bg-ticketa-blue-500 flex size-[22px] items-center justify-center rounded-full text-[13px] font-extrabold text-white">
+              <span className="bg-ticketa-blue-500 flex size-[22px] items-center justify-center rounded-full text-[14px] font-extrabold text-white">
                 1
               </span>
               <span className="text-[15px] font-bold">상품권 정보</span>
             </div>
             <div className="bg-border h-px flex-1" />
             <div className="flex items-center gap-2 opacity-50">
-              <span className="bg-warm-200 text-warm-700 flex size-[22px] items-center justify-center rounded-full text-[13px] font-extrabold">
+              <span className="bg-warm-200 text-warm-700 flex size-[22px] items-center justify-center rounded-full text-[14px] font-extrabold">
                 2
               </span>
               <span className="text-[15px] font-semibold">카드 정보 입력</span>
             </div>
             <div className="bg-border h-px flex-1" />
             <div className="flex items-center gap-2 opacity-50">
-              <span className="bg-warm-200 text-warm-700 flex size-[22px] items-center justify-center rounded-full text-[13px] font-extrabold">
+              <span className="bg-warm-200 text-warm-700 flex size-[22px] items-center justify-center rounded-full text-[14px] font-extrabold">
                 3
               </span>
               <span className="text-[15px] font-semibold">검수 대기</span>
@@ -106,7 +106,7 @@ export function DesktopSellNew({ skus, className }: DesktopSellNewProps) {
                   background: 'radial-gradient(circle, rgba(212,162,76,0.25), transparent 70%)',
                 }}
               />
-              <div className="text-ticketa-gold-500 text-[13px] font-bold tracking-[0.08em] uppercase">
+              <div className="text-ticketa-gold-500 text-[14px] font-bold tracking-[0.08em] uppercase">
                 실시간 미리보기
               </div>
               <div className="mt-3.5 flex items-center gap-2.5">
@@ -124,7 +124,7 @@ export function DesktopSellNew({ skus, className }: DesktopSellNewProps) {
               </div>
               <div className="mt-1.5 flex gap-1.5">
                 <span
-                  className="text-ticketa-gold-500 rounded-full px-2 py-0.5 text-[13px] font-bold"
+                  className="text-ticketa-gold-500 rounded-full px-2 py-0.5 text-[14px] font-bold"
                   style={{ background: 'rgba(212,162,76,0.18)' }}
                 >
                   ~6분 매칭
@@ -145,7 +145,7 @@ export function DesktopSellNew({ skus, className }: DesktopSellNewProps) {
               ].map((c, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <span
-                    className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold text-white"
+                    className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold text-white"
                     style={{
                       background: c.ok ? 'var(--ticketa-blue-500)' : 'var(--warm-200)',
                       color: c.ok ? '#fff' : 'var(--warm-700)',

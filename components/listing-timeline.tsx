@@ -153,7 +153,7 @@ export function ListingTimeline({ status, timestamps, cancelReason }: Props) {
             </span>
             <span className="text-muted-foreground text-xs">{step.hint}</span>
             {step.ts && (
-              <span className="text-muted-foreground mt-0.5 text-[11px]">
+              <span className="text-muted-foreground mt-0.5 text-[12px]">
                 {formatDateTime(step.ts)}
               </span>
             )}

@@ -95,7 +95,7 @@ export default async function AgentSalesPage() {
           <div className="pointer-events-none absolute inset-0 flex flex-col justify-between pb-6 pl-9">
             {[160, 120, 80, 40, 0].map((v) => (
               <div key={v} className="relative">
-                <span className="text-muted-foreground absolute -top-2 -left-9 w-8 text-right text-[10px] tabular-nums">
+                <span className="text-muted-foreground absolute -top-2 -left-9 w-8 text-right text-[12px] tabular-nums">
                   {v}
                 </span>
                 <div className="border-border border-t" />
@@ -119,7 +119,7 @@ export default async function AgentSalesPage() {
                     style={{ height: `${((P2P_VALS[i] ?? 0) / BAR_MAX) * 100}%` }}
                   />
                 </div>
-                <span className="text-muted-foreground text-[11px] font-semibold">{month}</span>
+                <span className="text-muted-foreground text-[12px] font-semibold">{month}</span>
               </div>
             ))}
           </div>

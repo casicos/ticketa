@@ -51,24 +51,24 @@ export default async function AgentStorePage({
         <div className="lg:sticky lg:top-6 lg:self-start">
           <div className="mb-2.5 flex items-center gap-2">
             <span className="size-1.5 rounded-full bg-[#D4A24C]" />
-            <span className="text-muted-foreground text-[12px] font-extrabold tracking-[0.08em] uppercase">
+            <span className="text-muted-foreground text-[13px] font-extrabold tracking-[0.08em] uppercase">
               LIVE PREVIEW
             </span>
-            <span className="text-muted-foreground text-[12px]">· 구매자 카탈로그</span>
+            <span className="text-muted-foreground text-[13px]">· 구매자 카탈로그</span>
           </div>
           <div
             className="border-border rounded-[14px] border p-5"
             style={{ background: 'linear-gradient(180deg, #F8F4ED 0%, #FFFFFF 80%)' }}
           >
-            <div className="text-muted-foreground text-[11px] font-bold tracking-[0.06em] uppercase">
+            <div className="text-muted-foreground text-[12px] font-bold tracking-[0.06em] uppercase">
               카탈로그 카드
             </div>
             <div className="mt-2 rounded-[12px] border border-[#E0BD7A] bg-white p-3.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground text-[12px] font-bold">롯데</span>
+                <span className="text-muted-foreground text-[13px] font-bold">롯데</span>
                 <span className="bg-border h-2 w-px" />
                 <span
-                  className="inline-flex items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-[12px] font-extrabold text-white"
+                  className="inline-flex items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-[13px] font-extrabold text-white"
                   style={{
                     background: 'linear-gradient(135deg, #D4A24C, #B6862E)',
                     letterSpacing: '0.04em',
@@ -76,17 +76,17 @@ export default async function AgentStorePage({
                 >
                   공식
                 </span>
-                <span className="text-[13px] font-bold">{row.store_name}</span>
+                <span className="text-[14px] font-bold">{row.store_name}</span>
               </div>
-              <div className="mt-2 text-[13px] font-bold">500,000원권</div>
+              <div className="mt-2 text-[14px] font-bold">500,000원권</div>
               <div className="mt-1 text-[18px] font-extrabold tracking-[-0.018em] tabular-nums">
-                472,000<span className="text-muted-foreground ml-0.5 text-[12px]">원</span>
+                472,000<span className="text-muted-foreground ml-0.5 text-[13px]">원</span>
               </div>
             </div>
 
             {row.store_intro && (
               <>
-                <div className="text-muted-foreground mt-5 text-[11px] font-bold tracking-[0.06em] uppercase">
+                <div className="text-muted-foreground mt-5 text-[12px] font-bold tracking-[0.06em] uppercase">
                   매물 상세 · 상점 행
                 </div>
                 <div
@@ -103,8 +103,8 @@ export default async function AgentStorePage({
                     {row.store_name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-bold">{row.store_name}</div>
-                    <div className="text-warm-700 mt-0.5 truncate text-[11px]">
+                    <div className="text-[14px] font-bold">{row.store_name}</div>
+                    <div className="text-warm-700 mt-0.5 truncate text-[12px]">
                       {row.store_intro}
                     </div>
                   </div>
@@ -113,7 +113,7 @@ export default async function AgentStorePage({
             )}
 
             <div
-              className="mt-4 rounded-[8px] border border-dashed px-3 py-2.5 text-[12px] leading-[1.5]"
+              className="mt-4 rounded-[8px] border border-dashed px-3 py-2.5 text-[13px] leading-[1.5]"
               style={{ borderColor: '#E0BD7A', background: '#FFFCF6', color: '#8C6321' }}
             >
               변경은 90일에 1회 가능해요.

@@ -151,8 +151,8 @@ export function MobileLanding({
                 className="border-border rounded-[10px] border bg-white px-1 pt-3 pb-2.5 text-center"
               >
                 <DeptMark dept={b.dept as Department} size={36} />
-                <div className="mt-1.5 text-[13px] font-bold">{b.name}</div>
-                <div className="text-ticketa-blue-700 mt-0.5 text-[11px] font-semibold tabular-nums">
+                <div className="mt-1.5 text-[14px] font-bold">{b.name}</div>
+                <div className="text-ticketa-blue-700 mt-0.5 text-[12px] font-semibold tabular-nums">
                   {b.v}
                 </div>
               </Link>

@@ -152,7 +152,7 @@ export default async function WelcomePage({
           }}
         >
           <div
-            className="px-0 pt-5 text-[13px] font-bold tracking-[0.1em]"
+            className="px-0 pt-5 text-[14px] font-bold tracking-[0.1em]"
             style={{ color: 'rgba(255,255,255,0.55)' }}
           >
             NEXT · 첫 거래까지 3단계

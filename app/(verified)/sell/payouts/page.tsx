@@ -188,7 +188,7 @@ function PayoutSection({
               </div>
               <div className="flex flex-col items-end">
                 <MoneyDisplay value={row.net_amount} size="sm" />
-                <span className="text-muted-foreground text-[11px] tabular-nums">
+                <span className="text-muted-foreground text-[12px] tabular-nums">
                   총 {formatKRW(row.gross_amount)} − 수수료 {formatKRW(row.commission_amount)}
                 </span>
               </div>

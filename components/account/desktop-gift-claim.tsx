@@ -173,7 +173,7 @@ export function DesktopGiftClaim({ className }: { className?: string }) {
               🎫
             </span>
             <span className="text-sm font-extrabold tracking-tight">실물 카드로 받기</span>
-            <span className="bg-ticketa-gold-100 text-ticketa-gold-700 inline-flex items-center rounded-sm px-1.5 py-0.5 text-[11px] font-bold">
+            <span className="bg-ticketa-gold-100 text-ticketa-gold-700 inline-flex items-center rounded-sm px-1.5 py-0.5 text-[12px] font-bold">
               추천
             </span>
           </div>

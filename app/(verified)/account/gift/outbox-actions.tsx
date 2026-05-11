@@ -54,7 +54,7 @@ export function GiftOutboxActions({
       type="button"
       onClick={onRefund}
       disabled={pending}
-      className="border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border bg-white px-4 text-[13px] font-extrabold disabled:opacity-50"
+      className="border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border bg-white px-4 text-[14px] font-extrabold disabled:opacity-50"
     >
       <RotateCcw className="size-3.5" strokeWidth={2.25} />
       {pending ? '환불 중…' : '환불'}

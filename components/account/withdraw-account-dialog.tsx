@@ -18,7 +18,14 @@ const PRIMARY_BANKS = [
   { code: '003', name: '기업', bg: '#0080C8', fg: '#fff' },
 ] as const;
 
-export function WithdrawAccountDialog({ defaultHolder }: { defaultHolder: string }) {
+export function WithdrawAccountDialog({
+  defaultHolder,
+  onClose,
+}: {
+  defaultHolder: string;
+  /** 제공되면 우측 상단 X 버튼 노출 + 등록 성공 후 자동 호출. */
+  onClose?: () => void;
+}) {
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
   const [bankCode, setBankCode] = useState<string>(PRIMARY_BANKS[0].code);
@@ -58,6 +65,7 @@ export function WithdrawAccountDialog({ defaultHolder }: { defaultHolder: string
       if (result.ok) {
         toast.success('출금 계좌가 등록됐어요');
         router.refresh();
+        onClose?.();
       } else {
         toast.error(result.message ?? '계좌 등록에 실패했어요');
       }
@@ -76,19 +84,29 @@ export function WithdrawAccountDialog({ defaultHolder }: { defaultHolder: string
         className="flex w-full max-w-[520px] flex-col rounded-[18px] bg-white p-6 sm:p-7"
         style={{ boxShadow: '0 30px 80px rgba(15,21,30,0.35)' }}
       >
-        {/* Header — no close button (forced) */}
-        <div className="mb-4 flex items-center gap-3">
-          <div className="bg-ticketa-blue-50 text-ticketa-blue-700 flex size-11 items-center justify-center rounded-xl">
+        {/* Header — X 버튼은 onClose 가 있을 때만 (= 등록 후에도 진입 가능한 경우) */}
+        <div className="mb-4 flex items-start gap-3">
+          <div className="bg-ticketa-blue-50 text-ticketa-blue-700 flex size-11 shrink-0 items-center justify-center rounded-xl">
             <span className="text-[22px] font-black">↑</span>
           </div>
-          <div>
-            <div className="text-ticketa-blue-700 text-[12px] font-bold tracking-[0.1em] uppercase">
-              WITHDRAW · 1단계
+          <div className="flex-1">
+            <div className="text-ticketa-blue-700 text-[13px] font-bold tracking-[0.1em] uppercase">
+              WITHDRAW · {onClose ? '계좌 추가' : '1단계'}
             </div>
             <div className="mt-0.5 text-[19px] font-extrabold tracking-[-0.018em]">
-              출금 계좌를 먼저 등록해주세요
+              {onClose ? '새 출금 계좌 등록' : '출금 계좌를 먼저 등록해주세요'}
             </div>
           </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="닫기"
+              className="border-border text-muted-foreground hover:bg-warm-50 inline-flex size-8 cursor-pointer items-center justify-center rounded-[8px] border bg-white text-[16px] font-bold"
+            >
+              ×
+            </button>
+          )}
         </div>
 
         <div className="border-border bg-warm-50 text-warm-700 mb-[18px] rounded-[10px] border px-3.5 py-3 text-[14px] leading-[1.55]">
@@ -101,7 +119,7 @@ export function WithdrawAccountDialog({ defaultHolder }: { defaultHolder: string
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="text-muted-foreground hover:text-foreground cursor-pointer text-[13px] font-semibold"
+            className="text-muted-foreground hover:text-foreground cursor-pointer text-[14px] font-semibold"
           >
             {showAll ? '주요은행만 보기' : '+ 더보기'}
           </button>
@@ -115,14 +133,14 @@ export function WithdrawAccountDialog({ defaultHolder }: { defaultHolder: string
                 type="button"
                 onClick={() => setBankCode(b.code)}
                 className={cn(
-                  'hover:bg-warm-50 flex h-11 cursor-pointer items-center gap-2 rounded-[9px] bg-white px-2.5 text-[13px] font-bold tracking-[-0.01em] transition-colors',
+                  'hover:bg-warm-50 flex h-11 cursor-pointer items-center gap-2 rounded-[9px] bg-white px-2.5 text-[14px] font-bold tracking-[-0.01em] transition-colors',
                   isSelected
                     ? 'border-ticketa-blue-500 text-ticketa-blue-700 border-[1.5px]'
                     : 'border-border text-foreground border',
                 )}
               >
                 <span
-                  className="inline-flex size-[22px] items-center justify-center rounded-[5px] text-[11px] font-extrabold"
+                  className="inline-flex size-[22px] items-center justify-center rounded-[5px] text-[12px] font-extrabold"
                   style={{ background: b.bg, color: b.fg }}
                 >
                   {b.name.charAt(0)}
@@ -154,14 +172,14 @@ export function WithdrawAccountDialog({ defaultHolder }: { defaultHolder: string
             className="mt-2 mb-[18px] flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5"
             style={{ background: 'rgba(46,124,82,0.08)' }}
           >
-            <span className="inline-flex size-[22px] items-center justify-center rounded-full bg-[#1F6B43] text-[13px] font-black text-white">
+            <span className="inline-flex size-[22px] items-center justify-center rounded-full bg-[#1F6B43] text-[14px] font-black text-white">
               ✓
             </span>
             <div className="flex-1">
               <div className="text-[14px] font-bold text-[#1F6B43]">
                 예금주 {defaultHolder} · {matchedBankName}
               </div>
-              <div className="text-muted-foreground text-[13px]">본인인증 정보와 일치해요</div>
+              <div className="text-muted-foreground text-[14px]">본인인증 정보와 일치해요</div>
             </div>
           </div>
         ) : (
@@ -169,7 +187,7 @@ export function WithdrawAccountDialog({ defaultHolder }: { defaultHolder: string
         )}
 
         {/* Disabled holder verification note */}
-        <div className="bg-warm-50 text-muted-foreground mb-[18px] rounded-[10px] px-3.5 py-2.5 text-[13px] leading-[1.55]">
+        <div className="bg-warm-50 text-muted-foreground mb-[18px] rounded-[10px] px-3.5 py-2.5 text-[14px] leading-[1.55]">
           <b className="text-warm-700">예금주 1원 인증</b>은 현재 비활성화 상태로, 입력하신
           계좌번호와 본인인증 명의를 자동 매칭합니다.
         </div>

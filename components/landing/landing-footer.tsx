@@ -96,7 +96,7 @@ export function DesktopLandingFooter({ className = '' }: { className?: string })
         {/* Brand + trust badges */}
         <div className="flex flex-col gap-4">
           <LogoLockup symbolSize={26} wordmarkHeight={16} />
-          <div className="text-warm-600 text-[13px] leading-[1.55] tracking-[-0.005em]">
+          <div className="text-warm-600 text-[14px] leading-[1.55] tracking-[-0.005em]">
             검수한 상품권만 거래되는
             <br />
             안전한 마켓플레이스
@@ -125,7 +125,7 @@ export function DesktopLandingFooter({ className = '' }: { className?: string })
             BUSINESS INFO
           </div>
           <div
-            className="text-warm-700 grid gap-y-3 text-[13px]"
+            className="text-warm-700 grid gap-y-3 text-[14px]"
             style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', columnGap: 48 }}
           >
             <CompanyKV k="법인명" v={COMPANY_INFO.legalName} />
@@ -149,7 +149,7 @@ export function DesktopLandingFooter({ className = '' }: { className?: string })
             />
             <CompanyKV k="업태·종목" v={COMPANY_INFO.category} />
           </div>
-          <div className="border-border text-warm-700 mt-3.5 flex gap-3 border-t border-dashed pt-3.5 text-[13px]">
+          <div className="border-border text-warm-700 mt-3.5 flex gap-3 border-t border-dashed pt-3.5 text-[14px]">
             <span className="text-warm-500 w-24 shrink-0">사업장 소재지</span>
             <span className="leading-[1.55]">
               {COMPANY_INFO.address}
@@ -167,7 +167,7 @@ export function DesktopLandingFooter({ className = '' }: { className?: string })
           <div className="text-warm-900 font-mono text-[28px] leading-[1.1] font-semibold tracking-tight">
             {COMPANY_INFO.customerPhone}
           </div>
-          <div className="text-warm-600 mt-2 text-[13px] leading-[1.6]">
+          <div className="text-warm-600 mt-2 text-[14px] leading-[1.6]">
             {COMPANY_INFO.customerHours}
             <br />
             {COMPANY_INFO.customerChat}
@@ -185,7 +185,7 @@ export function DesktopLandingFooter({ className = '' }: { className?: string })
             </button>
             <a
               href={`mailto:${COMPANY_INFO.customerEmail}`}
-              className="border-border text-warm-800 flex h-10 items-center justify-between rounded-md border bg-white px-3.5 text-[13px] font-semibold"
+              className="border-border text-warm-800 flex h-10 items-center justify-between rounded-md border bg-white px-3.5 text-[14px] font-semibold"
             >
               <span className="font-mono">{COMPANY_INFO.customerEmail}</span>
               <span aria-hidden className="text-muted-foreground">
@@ -234,7 +234,7 @@ function TrustBadge({
   return (
     <span className="border-border text-warm-700 inline-flex w-fit items-center gap-2 rounded-md border bg-white px-3 py-1.5 text-xs font-semibold">
       <span
-        className={`grid place-items-center text-[10px] font-extrabold text-white ${
+        className={`grid place-items-center text-[12px] font-extrabold text-white ${
           iconShape === 'circle' ? 'rounded-full' : 'rounded-[4px]'
         }`}
         style={{ width: 18, height: 18, background: iconBg }}
@@ -276,7 +276,7 @@ export function MobileLandingFooter({ className = '' }: { className?: string }) 
       style={{ background: 'var(--warm-50)', borderTop: '1px solid var(--border)' }}
     >
       {/* Link rows */}
-      <div className="flex flex-wrap items-center text-[13px]">
+      <div className="flex flex-wrap items-center text-[14px]">
         {MOBILE_FOOTER_LINKS.map((it, i) => {
           const cls = it.strong ? 'font-bold text-warm-900' : 'font-medium text-warm-700';
           return (
@@ -305,7 +305,7 @@ export function MobileLandingFooter({ className = '' }: { className?: string }) 
       {/* Customer center card */}
       <div className="border-border mt-3.5 flex items-center justify-between rounded-[10px] border bg-white px-3.5 py-3">
         <div>
-          <div className="text-warm-500 text-[11px] font-bold tracking-[0.08em]">CUSTOMER</div>
+          <div className="text-warm-500 text-[12px] font-bold tracking-[0.08em]">CUSTOMER</div>
           <div className="text-warm-900 font-mono text-xl font-semibold tracking-tight">
             {COMPANY_INFO.customerPhone}
           </div>
@@ -314,7 +314,7 @@ export function MobileLandingFooter({ className = '' }: { className?: string }) 
         <button
           type="button"
           onClick={notifyComingSoon}
-          className="bg-ticketa-blue-500 hover:bg-ticketa-blue-600 h-9 cursor-pointer rounded-md px-3 text-[13px] font-bold text-white"
+          className="bg-ticketa-blue-500 hover:bg-ticketa-blue-600 h-9 cursor-pointer rounded-md px-3 text-[14px] font-bold text-white"
         >
           채팅 상담
         </button>
@@ -323,7 +323,7 @@ export function MobileLandingFooter({ className = '' }: { className?: string }) 
       {/* Company info */}
       <div className="border-border mt-3.5 rounded-[10px] border bg-white px-3.5 py-3">
         <div className="flex items-center justify-between">
-          <span className="text-warm-900 text-[13px] font-bold">
+          <span className="text-warm-900 text-[14px] font-bold">
             {COMPANY_INFO.legalName} 사업자정보
           </span>
           <span aria-hidden className="text-muted-foreground text-xs">
@@ -355,12 +355,12 @@ export function MobileLandingFooter({ className = '' }: { className?: string }) 
         </div>
       </div>
 
-      <div className="text-warm-500 mt-3.5 text-[11px] leading-[1.6]">
+      <div className="text-warm-500 mt-3.5 text-[12px] leading-[1.6]">
         {COMPANY_INFO.legalName}은 통신판매중개자로서 통신판매의 당사자가 아니며, 회원 간 거래에
         대한 책임은 거래 당사자에게 있습니다.
       </div>
 
-      <div className="text-warm-500 mt-2.5 flex items-center justify-between text-[11px]">
+      <div className="text-warm-500 mt-2.5 flex items-center justify-between text-[12px]">
         <span>© 2026 {COMPANY_INFO.legalName}</span>
         <span className="inline-flex items-center gap-2">
           <span className="border-border text-ticketa-blue-700 rounded-full border bg-white px-2 py-0.5 font-bold">

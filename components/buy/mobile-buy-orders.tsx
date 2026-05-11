@@ -75,7 +75,7 @@ export function MobileBuyOrders({
           className="pointer-events-none absolute top-[-30px] right-[-30px] size-[130px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(212,162,76,0.22), transparent 70%)' }}
         />
-        <div className="text-ticketa-gold-500 text-[12px] font-bold tracking-[0.06em] uppercase">
+        <div className="text-ticketa-gold-500 text-[13px] font-bold tracking-[0.06em] uppercase">
           누적 절약 금액
         </div>
         <div className="mt-1 text-[26px] font-extrabold tracking-[-0.022em] tabular-nums">
@@ -151,14 +151,14 @@ export function MobileBuyOrders({
                         {r.sku?.display_name ?? '알 수 없는 상품'}
                       </span>
                     </div>
-                    <div className="text-muted-foreground text-[13px] tabular-nums">
+                    <div className="text-muted-foreground text-[14px] tabular-nums">
                       {r.purchased_at && formatDateTime(r.purchased_at)}
                     </div>
                   </div>
                   {stageNum !== null ? (
                     <StageBadge stage={stageNum} label={BUY_LISTING_STATUS_LABELS[r.status]} />
                   ) : (
-                    <span className="bg-muted text-muted-foreground rounded-sm px-2 py-0.5 text-[12px] font-medium">
+                    <span className="bg-muted text-muted-foreground rounded-sm px-2 py-0.5 text-[13px] font-medium">
                       {BUY_LISTING_STATUS_LABELS[r.status]}
                     </span>
                   )}

@@ -122,7 +122,7 @@ export function DesktopBuyOrders({
                 background: 'radial-gradient(circle, rgba(212,162,76,0.20), transparent 70%)',
               }}
             />
-            <div className="text-ticketa-gold-500 text-[13px] font-bold tracking-[0.06em] uppercase">
+            <div className="text-ticketa-gold-500 text-[14px] font-bold tracking-[0.06em] uppercase">
               누적 절약 금액
             </div>
             <div className="mt-1.5 text-[28px] font-extrabold tracking-[-0.022em] tabular-nums">
@@ -142,7 +142,7 @@ export function DesktopBuyOrders({
             },
           ].map((s, i) => (
             <div key={i} className="surface-card px-5 py-[18px]">
-              <div className="text-muted-foreground text-[13px] font-bold tracking-[0.04em] uppercase">
+              <div className="text-muted-foreground text-[14px] font-bold tracking-[0.04em] uppercase">
                 {s.k}
               </div>
               <div
@@ -182,7 +182,7 @@ export function DesktopBuyOrders({
                     {tab.label}
                     <span
                       className={cn(
-                        'rounded-full px-1.5 py-0.5 text-[12px] font-bold tabular-nums',
+                        'rounded-full px-1.5 py-0.5 text-[13px] font-bold tabular-nums',
                         isActive
                           ? 'bg-ticketa-blue-500/15 text-ticketa-blue-700'
                           : 'bg-muted text-muted-foreground',
@@ -243,7 +243,7 @@ export function DesktopBuyOrders({
                             label={BUY_LISTING_STATUS_LABELS[r.status]}
                           />
                         ) : (
-                          <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-2 py-0.5 text-[13px] font-medium">
+                          <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-2 py-0.5 text-[14px] font-medium">
                             {BUY_LISTING_STATUS_LABELS[r.status]}
                           </span>
                         )}

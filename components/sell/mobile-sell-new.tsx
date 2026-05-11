@@ -57,7 +57,7 @@ export function MobileSellNew({ skus, className }: MobileSellNewProps) {
               className="border-border flex flex-col items-center gap-1 rounded-[10px] border bg-white p-2.5"
             >
               <DeptMark dept={d as Department} size={22} />
-              <span className="text-[12px] font-bold">{DEPT_LABELS[d]}</span>
+              <span className="text-[13px] font-bold">{DEPT_LABELS[d]}</span>
             </div>
           ))}
         </div>
@@ -86,7 +86,7 @@ export function MobileSellNew({ skus, className }: MobileSellNewProps) {
               background: 'radial-gradient(circle, rgba(212,162,76,0.22), transparent 70%)',
             }}
           />
-          <div className="text-ticketa-gold-500 text-[12px] font-bold tracking-[0.08em] uppercase">
+          <div className="text-ticketa-gold-500 text-[13px] font-bold tracking-[0.08em] uppercase">
             미리보기
           </div>
           <div className="mt-2 flex items-center justify-between">
@@ -101,7 +101,7 @@ export function MobileSellNew({ skus, className }: MobileSellNewProps) {
               </div>
             </div>
             <span
-              className="text-ticketa-gold-500 rounded-full px-2 py-0.5 text-[13px] font-bold"
+              className="text-ticketa-gold-500 rounded-full px-2 py-0.5 text-[14px] font-bold"
               style={{ background: 'rgba(212,162,76,0.18)' }}
             >
               ~6분 매칭
@@ -113,7 +113,7 @@ export function MobileSellNew({ skus, className }: MobileSellNewProps) {
       {/* Form */}
       <div className="px-4 pb-24">
         <NewListingForm skus={skus} onSkuChange={setSelectedSku} />
-        <div className="text-muted-foreground mt-3 text-center text-[13px]">
+        <div className="text-muted-foreground mt-3 text-center text-[14px]">
           판매 성사 시 수수료 2.5% · 정산 출금 1,000원
         </div>
       </div>

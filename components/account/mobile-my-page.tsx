@@ -43,7 +43,7 @@ export function MobileMyPage({
               TK
             </div>
             <div className="flex-1">
-              <div className="text-[12px] font-bold tracking-[0.08em] text-[#E5C387]">
+              <div className="text-[13px] font-bold tracking-[0.08em] text-[#E5C387]">
                 {tier} · {displayName}님
               </div>
               <div className="mt-0.5 text-[14px] font-bold tracking-[-0.015em]">환영해요</div>

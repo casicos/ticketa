@@ -187,7 +187,7 @@ export function DesktopSellListings({
                   )}
                 >
                   {t.label}
-                  <span className="text-[13px] tabular-nums opacity-80">{t.count}</span>
+                  <span className="text-[14px] tabular-nums opacity-80">{t.count}</span>
                 </Link>
               );
             })}
@@ -255,7 +255,7 @@ export function DesktopSellListings({
                           <div className="font-bold tracking-[-0.012em]">
                             {r.sku?.display_name ?? '알 수 없는 상품'}
                           </div>
-                          <div className="text-muted-foreground font-mono text-[13px] tabular-nums">
+                          <div className="text-muted-foreground font-mono text-[14px] tabular-nums">
                             {r.id.slice(0, 12).toUpperCase()}
                           </div>
                         </div>
@@ -277,7 +277,7 @@ export function DesktopSellListings({
                               label={LISTING_STATUS_LABELS[r.status]}
                             />
                           ) : (
-                            <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-2 py-0.5 text-[13px] font-medium">
+                            <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-2 py-0.5 text-[14px] font-medium">
                               {LISTING_STATUS_LABELS[r.status]}
                             </span>
                           )}
@@ -326,7 +326,7 @@ function KpiCard({
           : 'text-foreground';
   return (
     <div className="surface-card p-3.5">
-      <div className="text-muted-foreground text-[13px] font-bold tracking-[0.04em] uppercase">
+      <div className="text-muted-foreground text-[14px] font-bold tracking-[0.04em] uppercase">
         {k}
       </div>
       <div
@@ -338,7 +338,7 @@ function KpiCard({
         {v}
         <span className="ml-0.5 text-[15px] font-bold opacity-70">{unit}</span>
       </div>
-      <div className="text-muted-foreground mt-1 text-[13px]">{sub}</div>
+      <div className="text-muted-foreground mt-1 text-[14px]">{sub}</div>
     </div>
   );
 }

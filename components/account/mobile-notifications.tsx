@@ -86,7 +86,7 @@ export function MobileNotifications() {
                 >
                   <span className="flex-1 text-sm font-semibold">{it.l}</span>
                   {it.imp && (
-                    <span className="bg-destructive/10 text-destructive rounded px-1 py-px text-[10px] font-extrabold tracking-wider">
+                    <span className="bg-destructive/10 text-destructive rounded px-1 py-px text-[12px] font-extrabold tracking-wider">
                       필수
                     </span>
                   )}
@@ -99,7 +99,7 @@ export function MobileNotifications() {
 
         {/* Marketing */}
         <div className="bg-warm-50 rounded-xl p-3">
-          <div className="text-muted-foreground mb-3 text-[11px] font-bold tracking-widest uppercase">
+          <div className="text-muted-foreground mb-3 text-[12px] font-bold tracking-widest uppercase">
             마케팅 정보 수신
           </div>
           <div className="flex items-center border-b border-black/4 py-2">

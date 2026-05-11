@@ -42,7 +42,7 @@ export default function TermsPage() {
     <div className="bg-background min-h-screen">
       <div className="mx-auto max-w-[1100px] px-8 py-8 pb-16">
         {/* Header */}
-        <div className="text-ticketa-blue-700 text-[13px] font-bold tracking-[0.12em]">
+        <div className="text-ticketa-blue-700 text-[14px] font-bold tracking-[0.12em]">
           TERMS OF SERVICE
         </div>
         <h1 className="mt-1.5 text-[30px] font-extrabold tracking-[-0.022em]">이용약관</h1>
@@ -52,7 +52,7 @@ export default function TermsPage() {
           {/* TOC sidebar */}
           <aside className="self-start md:sticky md:top-20">
             <div className="border-border rounded-xl border bg-white p-2">
-              <div className="text-muted-foreground px-2.5 pt-0.5 pb-2 text-[13px] font-bold tracking-[0.05em] uppercase">
+              <div className="text-muted-foreground px-2.5 pt-0.5 pb-2 text-[14px] font-bold tracking-[0.05em] uppercase">
                 목차
               </div>
               {NAV.map((n, i) => (

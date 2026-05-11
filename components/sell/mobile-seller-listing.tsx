@@ -90,7 +90,7 @@ export function MobileSellerListing({
         </div>
         <div className="mt-3 flex items-baseline justify-between">
           <div>
-            <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <div className="text-muted-foreground text-[12px] font-bold tracking-wider uppercase">
               판매가
             </div>
             <div className="text-2xl font-black tracking-tight tabular-nums">
@@ -121,7 +121,7 @@ export function MobileSellerListing({
               className={`py-3 text-center ${i < arr.length - 1 ? 'border-border border-r' : ''}`}
             >
               <div className="text-sm font-extrabold tabular-nums">{v}</div>
-              <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <div className="text-muted-foreground text-[12px] font-bold tracking-wider uppercase">
                 {l}
               </div>
             </div>
@@ -173,7 +173,7 @@ export function MobileSellerListing({
         </dl>
         {adminMemo && (
           <div className="border-border bg-muted/40 mt-4 rounded-lg border p-3">
-            <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <p className="text-muted-foreground text-[12px] font-bold tracking-wider uppercase">
               어드민 메모
             </p>
             <pre className="mt-1 text-xs leading-relaxed whitespace-pre-wrap">{adminMemo}</pre>

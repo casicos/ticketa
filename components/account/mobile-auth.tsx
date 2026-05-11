@@ -34,7 +34,7 @@ export function MobileAuth({ phoneVerified, phone }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <div
-                className="text-[10px] font-bold tracking-widest"
+                className="text-[12px] font-bold tracking-widest"
                 style={{ color: phoneVerified ? '#7DC79F' : '#FFC87A' }}
               >
                 {phoneVerified ? 'VERIFIED' : 'PENDING'}
@@ -51,7 +51,7 @@ export function MobileAuth({ phoneVerified, phone }: Props) {
           <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-3">
             {[{ l: '일일 한도' }, { l: '월 한도' }].map((t) => (
               <div key={t.l}>
-                <div className="text-[10px] font-bold tracking-widest text-white/50">{t.l}</div>
+                <div className="text-[12px] font-bold tracking-widest text-white/50">{t.l}</div>
                 <div className="mt-0.5 inline-flex items-center gap-1 text-sm font-extrabold">
                   <span className="text-[15px] leading-none font-black">∞</span>
                   한도 없음
@@ -72,7 +72,7 @@ export function MobileAuth({ phoneVerified, phone }: Props) {
 
       {/* Verification items */}
       <div className="mt-4 flex flex-col gap-3 px-4">
-        <div className="text-muted-foreground px-1 text-[11px] font-bold tracking-widest uppercase">
+        <div className="text-muted-foreground px-1 text-[12px] font-bold tracking-widest uppercase">
           인증 항목
         </div>
         {[

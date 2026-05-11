@@ -3,36 +3,73 @@
 import { useState } from 'react';
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatKRW } from '@/lib/format';
+import { formatKRW, koreanNumberWord } from '@/lib/format';
+import { BankMark } from '@/components/ticketa/bank-mark';
+import { bankNameByCode, bankBrandColor } from '@/lib/domain/banks';
+import { WithdrawAccountDialog } from '@/components/account/withdraw-account-dialog';
 
-const WITHDRAW_FEE = 1000;
+export type WithdrawAccountOption = {
+  id: string;
+  bank_code: string;
+  account_number_last4: string;
+  account_holder: string;
+};
+
+export type WithdrawHistoryRow = {
+  id: number;
+  amount: number;
+  fee: number;
+  bank_code: string;
+  account_number_last4: string;
+  account_holder: string;
+  status: 'requested' | 'processing' | 'completed' | 'rejected';
+  requested_at: string;
+  completed_at: string | null;
+  admin_memo: string | null;
+};
 
 export interface DesktopMileageWithdrawProps {
   totalBalance: number;
   withdrawable: number;
   pgLocked: number;
+  inFlightWithdraw: number;
   defaultHolder: string;
   formAction: string;
   hasError?: boolean;
   errorMessage?: string;
+  accounts: WithdrawAccountOption[];
+  withdrawFee: number;
+  history: WithdrawHistoryRow[];
   className?: string;
 }
 
 export function DesktopMileageWithdraw({
   totalBalance,
   withdrawable,
-  pgLocked,
+  pgLocked: _pgLocked,
+  inFlightWithdraw,
   defaultHolder,
   formAction,
   hasError,
   errorMessage,
+  accounts,
+  withdrawFee,
+  history,
   className,
 }: DesktopMileageWithdrawProps) {
   const [tab, setTab] = useState<'bank' | 'history'>('bank');
   const [requested, setRequested] = useState<number>(Math.min(withdrawable, 500000));
-  const net = Math.max(requested - WITHDRAW_FEE, 0);
+  const [amountFocused, setAmountFocused] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(accounts[0]?.id ?? '');
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const net = Math.max(requested - withdrawFee, 0);
 
   const hasWithdrawable = withdrawable > 0;
+  const amountDisplay = amountFocused
+    ? requested === 0
+      ? ''
+      : String(requested)
+    : requested.toLocaleString('ko-KR');
 
   return (
     <div className={cn('hidden md:block', className)}>
@@ -80,16 +117,21 @@ export function DesktopMileageWithdraw({
                 <div className="mb-3 text-[15px] font-bold tracking-[-0.01em]">출금 가능 금액</div>
                 <div className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2.5 text-[15px]">
                   <span className="text-muted-foreground">총 마일리지</span>
-                  <span className="font-bold tabular-nums">{totalBalance.toLocaleString()} M</span>
+                  <span className="font-bold tabular-nums">
+                    {(totalBalance + inFlightWithdraw).toLocaleString('ko-KR')} M
+                  </span>
                   <span className="text-muted-foreground">출금 가능 마일리지</span>
                   <span className="text-destructive font-extrabold tabular-nums">
-                    {withdrawable.toLocaleString()} M
+                    {withdrawable.toLocaleString('ko-KR')} M
                   </span>
-                  {pgLocked > 0 && (
+                  {inFlightWithdraw > 0 && (
                     <>
-                      <span className="text-muted-foreground">거래 대기 (출금 불가)</span>
-                      <span className="text-muted-foreground font-semibold tabular-nums">
-                        {pgLocked.toLocaleString()} M
+                      <span className="text-muted-foreground">출금 진행 중</span>
+                      <span
+                        className="font-semibold tabular-nums"
+                        style={{ color: 'var(--ticketa-blue-700)' }}
+                      >
+                        {inFlightWithdraw.toLocaleString('ko-KR')} M
                       </span>
                     </>
                   )}
@@ -98,86 +140,118 @@ export function DesktopMileageWithdraw({
 
               {/* Withdraw form */}
               {hasWithdrawable ? (
-                <form action={formAction} className="surface-card p-5">
+                <form id="withdraw-form" action={formAction} className="surface-card p-5">
                   <div className="mb-3.5 text-[15px] font-bold tracking-[-0.01em]">출금 신청</div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3.5">
+                    {/* Account selector */}
                     <div>
-                      <label className="mb-1.5 block text-[14px] font-semibold">은행</label>
-                      <select
-                        name="bank_code"
-                        required
-                        className="border-border focus:border-ticketa-blue-500 h-10 w-full rounded-[10px] border bg-white px-3 text-[15px] outline-none"
-                        defaultValue=""
-                      >
-                        <option value="" disabled>
-                          은행을 선택해주세요
-                        </option>
-                        {BANKS.map((b) => (
-                          <option key={b.code} value={b.code}>
-                            {b.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-[14px] font-semibold">계좌번호</label>
-                      <input
-                        name="account_number"
-                        type="text"
-                        inputMode="numeric"
-                        pattern="\d{10,16}"
-                        maxLength={16}
-                        placeholder="숫자만 입력 (10~16자리)"
-                        required
-                        className="border-border focus:border-ticketa-blue-500 h-10 w-full rounded-[10px] border bg-white px-3 text-[15px] tabular-nums outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-[14px] font-semibold">예금주</label>
-                      <input
-                        name="account_holder"
-                        type="text"
-                        defaultValue={defaultHolder}
-                        maxLength={40}
-                        required
-                        className="border-border focus:border-ticketa-blue-500 h-10 w-full rounded-[10px] border bg-white px-3 text-[15px] outline-none"
-                      />
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <label className="block text-[14px] font-semibold">입금 받을 계좌</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddDialog(true)}
+                          className="text-ticketa-blue-700 text-[13px] font-bold hover:underline"
+                        >
+                          + 새 계좌 등록
+                        </button>
+                      </div>
+                      <input type="hidden" name="account_id" value={selectedAccountId} />
+                      <div className="space-y-1.5">
+                        {accounts.map((a) => {
+                          const selected = a.id === selectedAccountId;
+                          return (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => setSelectedAccountId(a.id)}
+                              className={cn(
+                                'flex w-full items-center gap-3 rounded-[10px] border-[1.5px] px-3.5 py-2.5 text-left transition-colors',
+                                selected
+                                  ? 'border-ticketa-blue-500 bg-ticketa-blue-50'
+                                  : 'border-border hover:bg-warm-50 bg-white',
+                              )}
+                            >
+                              <BankMark
+                                name={bankNameByCode(a.bank_code)}
+                                brandColor={bankBrandColor(a.bank_code)}
+                                size="md"
+                              />
+                              <div className="flex-1">
+                                <div className="text-[14px] font-bold">
+                                  {bankNameByCode(a.bank_code)}{' '}
+                                  <span className="text-muted-foreground font-mono text-[13px]">
+                                    ****{a.account_number_last4}
+                                  </span>
+                                </div>
+                                <div className="text-muted-foreground text-[13px]">
+                                  예금주 {a.account_holder}
+                                </div>
+                              </div>
+                              {selected && (
+                                <span className="text-ticketa-blue-700 text-[13px] font-extrabold">
+                                  선택됨
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <div>
                       <label className="mb-1.5 block text-[14px] font-semibold">출금 금액</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          name="amount"
-                          type="number"
-                          min={1000}
-                          max={withdrawable}
-                          value={requested}
-                          onChange={(e) => setRequested(Number(e.target.value))}
-                          className="border-ticketa-blue-500 focus:ring-ticketa-blue-50 h-[50px] flex-1 rounded-[10px] border bg-white px-3.5 text-right text-[16px] font-extrabold tabular-nums outline-none focus:ring-3"
-                        />
-                        <span className="text-muted-foreground text-[15px] font-semibold">원</span>
+                      <div className="flex items-start gap-2">
+                        <input type="hidden" name="amount" value={String(requested)} />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              autoComplete="off"
+                              value={amountDisplay}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/[^\d]/g, '');
+                                setRequested(cleaned === '' ? 0 : Number(cleaned));
+                              }}
+                              onFocus={() => setAmountFocused(true)}
+                              onBlur={() => {
+                                setAmountFocused(false);
+                                if (requested > withdrawable) setRequested(withdrawable);
+                              }}
+                              className="border-ticketa-blue-500 focus:ring-ticketa-blue-50 h-[50px] flex-1 rounded-[10px] border bg-white px-3.5 text-right text-[16px] font-extrabold tabular-nums outline-none focus:ring-3"
+                            />
+                            <span className="text-muted-foreground text-[15px] font-semibold">
+                              원
+                            </span>
+                          </div>
+                          <div
+                            className="text-muted-foreground mt-1 min-h-[18px] pr-[22px] text-right text-[14px]"
+                            aria-live="polite"
+                          >
+                            {!amountFocused && requested > 0
+                              ? `${koreanNumberWord(requested)}원`
+                              : ''}
+                          </div>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setRequested(withdrawable)}
-                          className="bg-ticketa-blue-500 h-[50px] rounded-[10px] px-[18px] text-[15px] font-bold text-white"
+                          className="bg-ticketa-blue-500 h-[50px] shrink-0 rounded-[10px] px-[18px] text-[15px] font-bold text-white"
                         >
                           전액
                         </button>
                       </div>
-                      <div className="bg-ticketa-blue-50 mt-3 flex items-center justify-between rounded-[10px] px-3.5 py-2.5">
+                      <div className="bg-ticketa-blue-50 mt-2 flex items-center justify-between rounded-[10px] px-3.5 py-2.5">
                         <span className="text-ticketa-blue-700 text-[15px] font-bold">
                           실 출금액
                         </span>
                         <span className="text-ticketa-blue-700 text-[16px] font-extrabold tabular-nums">
-                          {net.toLocaleString()} 원
+                          {net.toLocaleString('ko-KR')} 원
                         </span>
                       </div>
                       <p className="text-muted-foreground mt-1.5 text-right text-[15px]">
-                        출금 수수료 {formatKRW(WITHDRAW_FEE)} 차감 후 입금
+                        출금 수수료 {formatKRW(withdrawFee)} 차감 후 입금
                       </p>
                     </div>
                   </div>
@@ -221,30 +295,77 @@ export function DesktopMileageWithdraw({
           </div>
         )}
 
-        {tab === 'history' && (
-          <div className="surface-card text-muted-foreground p-5 text-center text-[15px]">
-            출금 내역이 없어요.
-          </div>
-        )}
+        {tab === 'history' && <WithdrawHistoryList rows={history} />}
       </div>
+
+      {showAddDialog && (
+        <WithdrawAccountDialog
+          defaultHolder={defaultHolder}
+          onClose={() => setShowAddDialog(false)}
+        />
+      )}
     </div>
   );
 }
 
-// Minimal bank list for the form (full list in lib/domain/banks.ts — but we need it client-side)
-const BANKS = [
-  { code: '004', name: '국민은행' },
-  { code: '088', name: '신한은행' },
-  { code: '020', name: '우리은행' },
-  { code: '081', name: '하나은행' },
-  { code: '003', name: '기업은행' },
-  { code: '032', name: '부산은행' },
-  { code: '034', name: '광주은행' },
-  { code: '045', name: '새마을금고' },
-  { code: '007', name: '수협' },
-  { code: '011', name: '농협' },
-  { code: '071', name: '우체국' },
-  { code: '089', name: '케이뱅크' },
-  { code: '090', name: '카카오뱅크' },
-  { code: '092', name: '토스뱅크' },
-];
+const HISTORY_STATUS: Record<WithdrawHistoryRow['status'], { l: string; bg: string; fg: string }> =
+  {
+    requested: { l: '처리 중', bg: 'rgba(91,163,208,0.15)', fg: 'var(--ticketa-blue-700)' },
+    processing: { l: '처리 중', bg: 'rgba(91,163,208,0.15)', fg: 'var(--ticketa-blue-700)' },
+    completed: { l: '완료', bg: 'rgba(31,107,67,0.12)', fg: '#1F6B43' },
+    rejected: { l: '반려', bg: 'rgba(190,42,42,0.12)', fg: '#BE2A2A' },
+  };
+
+function WithdrawHistoryList({ rows }: { rows: WithdrawHistoryRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <div className="surface-card text-muted-foreground p-5 text-center text-[15px]">
+        출금 내역이 없어요.
+      </div>
+    );
+  }
+  return (
+    <div className="surface-card overflow-hidden">
+      <ul className="divide-warm-100 divide-y">
+        {rows.map((r) => {
+          const s = HISTORY_STATUS[r.status];
+          return (
+            <li key={r.id} className="flex items-start gap-3 px-5 py-3.5">
+              <span
+                className="mt-0.5 inline-flex h-6 items-center rounded-full px-2 text-[12px] font-extrabold"
+                style={{ background: s.bg, color: s.fg }}
+              >
+                {s.l}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-[15px] font-bold tabular-nums">
+                  {r.amount.toLocaleString('ko-KR')}원
+                  <span className="text-muted-foreground text-[13px] font-normal">
+                    · 수수료 {r.fee.toLocaleString('ko-KR')}원
+                  </span>
+                </div>
+                <div className="text-muted-foreground mt-0.5 text-[13px]">
+                  {bankNameByCode(r.bank_code)} ****{r.account_number_last4} · 예금주{' '}
+                  {r.account_holder}
+                </div>
+                {r.status === 'rejected' && r.admin_memo && (
+                  <div className="text-destructive mt-0.5 text-[13px]">
+                    반려 사유: {r.admin_memo}
+                  </div>
+                )}
+              </div>
+              <div className="text-muted-foreground shrink-0 text-[12px] tabular-nums">
+                {new Date(r.completed_at ?? r.requested_at).toLocaleString('ko-KR', {
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}

@@ -181,7 +181,7 @@ export function NewListingForm({
             {...form.register('pre_verified')}
           />
           <span className="text-[14px] leading-[1.55]">
-            <span className="text-foreground font-bold">사전 송부 (검수 후 [인증] 노출)</span>
+            <span className="text-foreground font-bold">사전 송부 (검수 후 인증 노출)</span>
             <span className="text-muted-foreground mt-0.5 block">
               체크 시 어드민 검수가 끝나야 카탈로그에 노출돼요. 매입되면 검수 단계가 생략돼서
               구매자에게 빠르게 발송돼요.

@@ -147,7 +147,7 @@ export function SignupForm() {
         >
           <CheckSquare on={allChecked} />
           <span className="text-[15px] font-extrabold tracking-[-0.012em]">모두 동의합니다</span>
-          <span className="text-muted-foreground ml-auto text-[13px]">선택 항목 포함</span>
+          <span className="text-muted-foreground ml-auto text-[14px]">선택 항목 포함</span>
         </button>
 
         <div className="flex flex-col gap-2.5 pt-3">
@@ -176,7 +176,7 @@ export function SignupForm() {
                   <Link
                     href={t.href}
                     target="_blank"
-                    className="text-muted-foreground hover:text-foreground text-[13px] underline underline-offset-2"
+                    className="text-muted-foreground hover:text-foreground text-[14px] underline underline-offset-2"
                   >
                     보기
                   </Link>
@@ -187,7 +187,7 @@ export function SignupForm() {
         </div>
 
         {(errors.agree_terms || errors.agree_privacy) && (
-          <p className="text-destructive mt-3 text-[13px] font-semibold">
+          <p className="text-destructive mt-3 text-[14px] font-semibold">
             {errors.agree_terms?.message ?? errors.agree_privacy?.message}
           </p>
         )}
@@ -207,7 +207,7 @@ export function SignupForm() {
       >
         {submitting ? '가입 중...' : '본인인증 후 가입하기'}
       </Button>
-      <p className="text-muted-foreground text-center text-[13px]">
+      <p className="text-muted-foreground text-center text-[14px]">
         다음 단계에서 휴대폰 SMS 인증으로 본인 확인이 진행돼요 (1~2분)
       </p>
     </form>
@@ -220,8 +220,8 @@ function CheckSquare({ on }: { on: boolean }) {
       aria-hidden
       className={
         on
-          ? 'bg-ticketa-blue-500 inline-flex size-[18px] shrink-0 items-center justify-center rounded-[5px] text-[12px] font-extrabold text-white'
-          : 'border-input inline-flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] bg-white text-[12px] text-transparent'
+          ? 'bg-ticketa-blue-500 inline-flex size-[18px] shrink-0 items-center justify-center rounded-[5px] text-[13px] font-extrabold text-white'
+          : 'border-input inline-flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] bg-white text-[13px] text-transparent'
       }
     >
       ✓
@@ -234,8 +234,8 @@ function Badge({ required }: { required: boolean }) {
     <span
       className={
         required
-          ? 'bg-destructive/10 text-destructive rounded-[3px] px-1.5 py-[1px] text-[12px] font-extrabold tracking-[0.04em]'
-          : 'bg-muted text-muted-foreground rounded-[3px] px-1.5 py-[1px] text-[12px] font-extrabold tracking-[0.04em]'
+          ? 'bg-destructive/10 text-destructive rounded-[3px] px-1.5 py-[1px] text-[13px] font-extrabold tracking-[0.04em]'
+          : 'bg-muted text-muted-foreground rounded-[3px] px-1.5 py-[1px] text-[13px] font-extrabold tracking-[0.04em]'
       }
     >
       {required ? '필수' : '선택'}

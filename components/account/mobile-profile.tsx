@@ -31,7 +31,7 @@ export function MobileProfile({
           >
             {initial.toUpperCase()}
           </div>
-          <div className="absolute -right-0.5 -bottom-0.5 flex size-5 items-center justify-center rounded-full border-2 border-white bg-[#11161E] text-[10px] text-white">
+          <div className="absolute -right-0.5 -bottom-0.5 flex size-5 items-center justify-center rounded-full border-2 border-white bg-[#11161E] text-[12px] text-white">
             📷
           </div>
         </div>
@@ -39,7 +39,7 @@ export function MobileProfile({
           <div className="flex items-center gap-2">
             <span className="text-lg font-extrabold tracking-tight">{displayName}</span>
             <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-widest text-white"
+              className="rounded-full px-2 py-0.5 text-[12px] font-extrabold tracking-widest text-white"
               style={{ background: 'linear-gradient(135deg, #D4A24C, #B6862E)' }}
             >
               GOLD
@@ -76,12 +76,12 @@ export function MobileProfile({
               </span>
               <div className="min-w-0 flex-1 truncate text-sm font-semibold">{f.v}</div>
               {f.locked && (
-                <span className="bg-warm-100 text-warm-700 rounded px-1.5 py-0.5 text-[11px] font-bold">
+                <span className="bg-warm-100 text-warm-700 rounded px-1.5 py-0.5 text-[12px] font-bold">
                   변경불가
                 </span>
               )}
               {f.verified && !f.locked && (
-                <span className="bg-success/10 text-success rounded px-1.5 py-0.5 text-[11px] font-bold">
+                <span className="bg-success/10 text-success rounded px-1.5 py-0.5 text-[12px] font-bold">
                   ✓
                 </span>
               )}

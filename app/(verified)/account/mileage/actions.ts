@@ -83,9 +83,7 @@ export async function withdrawRequestAction(formData: FormData): Promise<never> 
 
     const parsed = withdrawRequestSchema.safeParse({
       amount: formData.get('amount'),
-      bank_code: formData.get('bank_code'),
-      account_number: String(formData.get('account_number') ?? '').replace(/\D/g, ''),
-      account_holder: String(formData.get('account_holder') ?? '').trim(),
+      account_id: formData.get('account_id'),
     });
     if (!parsed.success) {
       throw Object.assign(new Error(parsed.error.issues[0]?.message ?? '입력값을 확인해주세요'), {
@@ -93,13 +91,25 @@ export async function withdrawRequestAction(formData: FormData): Promise<never> 
       });
     }
 
+    const supabase = await createSupabaseServerClient();
+    const { data: acct, error: acctErr } = await supabase
+      .from('seller_payout_accounts')
+      .select('bank_code, account_number_last4, account_holder')
+      .eq('id', parsed.data.account_id)
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle<{ bank_code: string; account_number_last4: string; account_holder: string }>();
+    if (acctErr || !acct) {
+      throw Object.assign(new Error('등록된 계좌를 찾을 수 없어요'), { code: 'ACCOUNT_NOT_FOUND' });
+    }
+
     try {
       await callRequestWithdraw({
         userId: user.id,
         amount: parsed.data.amount,
-        bankCode: parsed.data.bank_code,
-        accountNumberLast4: parsed.data.account_number.slice(-4),
-        accountHolder: parsed.data.account_holder,
+        bankCode: acct.bank_code,
+        accountNumberLast4: acct.account_number_last4,
+        accountHolder: acct.account_holder,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

@@ -135,17 +135,17 @@ export function DesktopMileageCharge({
                   }}
                 >
                   {m.recommend && (
-                    <span className="absolute top-[-8px] right-2.5 rounded-full bg-[#D4A24C] px-2 py-0.5 text-[13px] font-extrabold tracking-[0.04em] text-[#11161E]">
+                    <span className="absolute top-[-8px] right-2.5 rounded-full bg-[#D4A24C] px-2 py-0.5 text-[14px] font-extrabold tracking-[0.04em] text-[#11161E]">
                       추천
                     </span>
                   )}
                   {isDisabled && (
-                    <span className="border-warm-300 text-warm-600 absolute top-[-8px] right-2.5 rounded-full border bg-white px-2 py-0.5 text-[12px] font-bold tracking-[0.04em]">
+                    <span className="border-warm-300 text-warm-600 absolute top-[-8px] right-2.5 rounded-full border bg-white px-2 py-0.5 text-[13px] font-bold tracking-[0.04em]">
                       준비중
                     </span>
                   )}
                   <div
-                    className="text-[13px] font-bold tracking-[0.04em]"
+                    className="text-[14px] font-bold tracking-[0.04em]"
                     style={{ opacity: isDisabled ? 0.6 : 0.75 }}
                   >
                     {m.kind}
@@ -206,13 +206,6 @@ export function DesktopMileageCharge({
                 className="border-border focus:border-ticketa-blue-500 focus:ring-ticketa-blue-50 h-12 flex-1 rounded-[10px] border bg-white px-3.5 text-right text-[15px] font-bold tabular-nums outline-none focus:ring-3"
               />
               <span className="text-muted-foreground text-[15px] font-semibold">원</span>
-              <button
-                type="button"
-                onClick={() => handlePreset(100000)}
-                className="bg-warm-100 h-12 rounded-[10px] px-3.5 text-[15px] font-bold whitespace-nowrap"
-              >
-                최대 한도
-              </button>
             </div>
           </div>
 
@@ -246,14 +239,14 @@ export function DesktopMileageCharge({
             {/* Bank info box for bank_transfer */}
             {bankInfo && (
               <div className="border-border bg-muted/40 mt-3 rounded-lg border p-3">
-                <div className="text-ticketa-blue-700 mb-1 flex items-center gap-1.5 text-[11px] font-bold tracking-[0.06em] uppercase">
+                <div className="text-ticketa-blue-700 mb-1 flex items-center gap-1.5 text-[12px] font-bold tracking-[0.06em] uppercase">
                   <Building2 className="size-3.5" strokeWidth={1.75} />
                   플랫폼 입금 계좌
                 </div>
                 <div className="text-[14px] font-bold">
                   {bankInfo.bankName} · <span className="font-mono">{bankInfo.account}</span>
                 </div>
-                <div className="text-muted-foreground text-[13px]">예금주 {bankInfo.holder}</div>
+                <div className="text-muted-foreground text-[14px]">예금주 {bankInfo.holder}</div>
               </div>
             )}
 

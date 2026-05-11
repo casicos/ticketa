@@ -42,7 +42,7 @@ export default function GlobalError({
                 background: `radial-gradient(circle, ${accent}33, transparent 65%)`,
               }}
             />
-            <div className="text-[13px] font-extrabold tracking-[0.16em]" style={{ color: accent }}>
+            <div className="text-[14px] font-extrabold tracking-[0.16em]" style={{ color: accent }}>
               SERVER ERROR
             </div>
             <div
@@ -51,7 +51,7 @@ export default function GlobalError({
             >
               500
             </div>
-            <div className="font-mono text-[13px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <div className="font-mono text-[14px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
               req-id: {reqId}
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function GlobalError({
                 background: `radial-gradient(circle, ${accent}33, transparent 65%)`,
               }}
             />
-            <div className="text-[12px] font-extrabold tracking-[0.16em]" style={{ color: accent }}>
+            <div className="text-[13px] font-extrabold tracking-[0.16em]" style={{ color: accent }}>
               SERVER ERROR
             </div>
             <div
@@ -132,7 +132,7 @@ export default function GlobalError({
           >
             새로고침
           </button>
-          <div className="text-muted-foreground text-center font-mono text-[12px]">
+          <div className="text-muted-foreground text-center font-mono text-[13px]">
             req-id: {reqId}
           </div>
         </div>

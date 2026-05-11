@@ -166,7 +166,7 @@ export function DesktopLanding({
                   <div className="text-base font-bold tracking-[-0.012em]">롯데백화점 상품권</div>
                   <div className="text-muted-foreground text-sm">50,000원권 · 12건 매물</div>
                 </div>
-                <span className="bg-ticketa-gold-500/20 text-ticketa-gold-700 ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold">
+                <span className="bg-ticketa-gold-500/20 text-ticketa-gold-700 ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-semibold">
                   <span className="bg-ticketa-gold-700 size-1.5 rounded-full" />
                   검수완료
                 </span>
@@ -259,7 +259,7 @@ export function DesktopLanding({
                 className="border-border relative cursor-pointer rounded-2xl border bg-white px-[18px] pt-[18px] pb-4 transition-shadow hover:shadow-md"
               >
                 {b.hot && (
-                  <span className="bg-error absolute top-3 right-3 rounded-sm px-1.5 py-0.5 text-[12px] font-extrabold tracking-[0.04em] text-white">
+                  <span className="bg-error absolute top-3 right-3 rounded-sm px-1.5 py-0.5 text-[13px] font-extrabold tracking-[0.04em] text-white">
                     HOT
                   </span>
                 )}
@@ -267,24 +267,24 @@ export function DesktopLanding({
                   <DeptMark dept={b.dept as Department} size={44} />
                   <div className="min-w-0">
                     <div className="text-[15px] font-bold tracking-tight">{b.name}</div>
-                    <div className="text-muted-foreground mt-0.5 text-[13px] font-semibold tabular-nums">
+                    <div className="text-muted-foreground mt-0.5 text-[14px] font-semibold tabular-nums">
                       {b.v.toLocaleString('ko-KR')}건
                     </div>
                   </div>
                 </div>
                 <div className="border-warm-200 mt-3.5 flex items-baseline justify-between border-t border-dashed pt-3">
                   <div>
-                    <div className="text-muted-foreground text-[12px] font-semibold tracking-[0.02em]">
+                    <div className="text-muted-foreground text-[13px] font-semibold tracking-[0.02em]">
                       최저가
                     </div>
                     <div className="text-[15px] font-extrabold tracking-tight tabular-nums">
                       {b.low}
-                      <span className="text-muted-foreground ml-0.5 text-[12px] font-semibold">
+                      <span className="text-muted-foreground ml-0.5 text-[13px] font-semibold">
                         원
                       </span>
                     </div>
                   </div>
-                  <span className={`text-[13px] font-bold tabular-nums ${diffColor}`}>
+                  <span className={`text-[14px] font-bold tabular-nums ${diffColor}`}>
                     {diffLabel}
                   </span>
                 </div>
@@ -349,7 +349,7 @@ export function DesktopLanding({
       {/* HOW IT WORKS */}
       <section className="mx-auto px-8 py-20" style={{ maxWidth: 1180 }}>
         <div className="mb-14 text-center">
-          <span className="text-ticketa-blue-700 text-[13px] font-bold tracking-[0.06em] uppercase">
+          <span className="text-ticketa-blue-700 text-[14px] font-bold tracking-[0.06em] uppercase">
             HOW IT WORKS
           </span>
           <h2
@@ -378,7 +378,7 @@ export function DesktopLanding({
             },
           ].map((s) => (
             <div key={s.n} className="border-border rounded-2xl border bg-white p-7">
-              <div className="text-ticketa-gold-700 mb-3 text-[13px] font-bold tracking-[0.06em] uppercase">
+              <div className="text-ticketa-gold-700 mb-3 text-[14px] font-bold tracking-[0.06em] uppercase">
                 {s.n}
               </div>
               <div
@@ -405,7 +405,7 @@ export function DesktopLanding({
               style={{ background: PROMO_RADIAL }}
             />
             <div className="relative flex-1">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D4A24C]/20 px-2.5 py-1 text-[13px] font-bold tracking-[0.04em] text-[#E5C387] uppercase">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D4A24C]/20 px-2.5 py-1 text-[14px] font-bold tracking-[0.04em] text-[#E5C387] uppercase">
                 <span className="size-1.5 rounded-full bg-[#D4A24C]" />
                 FIRST TRADE
               </span>

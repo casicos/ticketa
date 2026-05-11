@@ -226,7 +226,7 @@ export function DesktopAgentSalesDaily({ month, day, className }: Props) {
               주말 평균 8.4M · 평일 평균 5.5M
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-4 text-[13px] font-semibold">
+          <div className="ml-auto flex items-center gap-4 text-[14px] font-semibold">
             <span className="flex items-center gap-1.5">
               <span
                 className="inline-block size-3 rounded-sm"
@@ -246,7 +246,7 @@ export function DesktopAgentSalesDaily({ month, day, className }: Props) {
 
         <div className="relative flex items-end gap-1 pl-8" style={{ height: 240 }}>
           {/* Y-axis labels */}
-          <div className="text-muted-foreground absolute top-0 bottom-6 left-0 flex flex-col justify-between text-[11px] tabular-nums">
+          <div className="text-muted-foreground absolute top-0 bottom-6 left-0 flex flex-col justify-between text-[12px] tabular-nums">
             <span>10M</span>
             <span>5M</span>
             <span>0</span>
@@ -264,7 +264,7 @@ export function DesktopAgentSalesDaily({ month, day, className }: Props) {
             return (
               <div key={b.d} className="flex flex-1 flex-col items-center gap-1.5">
                 <span
-                  className="text-[11px] font-bold tabular-nums"
+                  className="text-[12px] font-bold tabular-nums"
                   style={{ color: b.peak ? 'var(--destructive)' : 'var(--muted-foreground)' }}
                 >
                   {b.sales.toFixed(1)}M
@@ -284,7 +284,7 @@ export function DesktopAgentSalesDaily({ month, day, className }: Props) {
                 >
                   {b.dow}
                 </span>
-                <span className="text-muted-foreground text-[11px] tabular-nums">
+                <span className="text-muted-foreground text-[12px] tabular-nums">
                   {parseInt(mon, 10)}.{String(b.d).padStart(2, '0')}
                 </span>
               </div>
@@ -350,10 +350,10 @@ export function DesktopAgentSalesDaily({ month, day, className }: Props) {
                   <td className="px-3.5 py-3">
                     <span className="inline-flex items-center gap-1.5">
                       <DeptMark dept={r.topDept} size={20} />
-                      <span className="text-[13px]">{r.topSku}</span>
+                      <span className="text-[14px]">{r.topSku}</span>
                     </span>
                   </td>
-                  <td className="text-muted-foreground px-3.5 py-3 text-[13px] tabular-nums">
+                  <td className="text-muted-foreground px-3.5 py-3 text-[14px] tabular-nums">
                     {r.avgTime}
                   </td>
                   <td className="text-muted-foreground px-3.5 py-3 text-right text-sm">›</td>

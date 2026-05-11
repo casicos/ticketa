@@ -72,7 +72,7 @@ export function MobileAgentSalesDaily({ month, day, className }: Props) {
           <div className="mt-1.5 text-3xl font-black tracking-tight text-[#3F2A0A] tabular-nums">
             95.5M원
           </div>
-          <div className="text-warm-700 mt-1 text-[13px]">일 평균 6.37M · 목표 대비 98%</div>
+          <div className="text-warm-700 mt-1 text-[14px]">일 평균 6.37M · 목표 대비 98%</div>
           {/* Progress bar */}
           <div
             className="mt-2.5 h-1.5 overflow-hidden rounded-full"
@@ -93,7 +93,7 @@ export function MobileAgentSalesDaily({ month, day, className }: Props) {
             { l: '피크', v: `${monNum}.06` },
           ].map((s) => (
             <div key={s.l} className="min-w-[100px] shrink-0 rounded-xl border bg-white p-2.5">
-              <div className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
+              <div className="text-muted-foreground text-[12px] font-bold tracking-wider uppercase">
                 {s.l}
               </div>
               <div className="mt-0.5 text-base font-black tabular-nums">{s.v}</div>
@@ -103,7 +103,7 @@ export function MobileAgentSalesDaily({ month, day, className }: Props) {
 
         {/* Daily list */}
         <div className="p-3.5">
-          <div className="mb-2 text-[13px] font-extrabold tracking-tight">일별 상세</div>
+          <div className="mb-2 text-[14px] font-extrabold tracking-tight">일별 상세</div>
           <div className="overflow-hidden rounded-xl border bg-white">
             {ROWS.map((r, i, arr) => (
               <div
@@ -116,11 +116,11 @@ export function MobileAgentSalesDaily({ month, day, className }: Props) {
               >
                 <DeptMark dept={r.dept} size={28} />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px]" style={{ fontWeight: r.today ? 800 : 700 }}>
+                  <div className="text-[14px]" style={{ fontWeight: r.today ? 800 : 700 }}>
                     {r.label}
                     {r.today && (
                       <span
-                        className="ml-1.5 inline-flex items-center rounded px-1 py-0.5 text-[11px] font-bold text-white"
+                        className="ml-1.5 inline-flex items-center rounded px-1 py-0.5 text-[12px] font-bold text-white"
                         style={{ background: 'var(--ticketa-gold-700)' }}
                       >
                         오늘

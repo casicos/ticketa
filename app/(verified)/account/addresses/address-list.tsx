@@ -91,7 +91,7 @@ export function AddressList({ initial }: { initial: AddressItem[] }) {
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span className="text-[15px] font-extrabold">{a.label || a.recipient_name}</span>
                   {a.is_default && (
-                    <span className="bg-ticketa-blue-50 text-ticketa-blue-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold">
+                    <span className="bg-ticketa-blue-50 text-ticketa-blue-700 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-bold">
                       <Star className="size-3" strokeWidth={2.5} />
                       기본
                     </span>
@@ -111,7 +111,7 @@ export function AddressList({ initial }: { initial: AddressItem[] }) {
                     type="button"
                     onClick={() => onSetDefault(a.id)}
                     disabled={pending}
-                    className="border-border text-foreground hover:bg-warm-50 rounded-[8px] border bg-white px-3 py-1.5 text-[12px] font-bold disabled:opacity-50"
+                    className="border-border text-foreground hover:bg-warm-50 rounded-[8px] border bg-white px-3 py-1.5 text-[13px] font-bold disabled:opacity-50"
                   >
                     기본 지정
                   </button>
@@ -120,7 +120,7 @@ export function AddressList({ initial }: { initial: AddressItem[] }) {
                   type="button"
                   onClick={() => setEditing(a)}
                   disabled={pending}
-                  className="border-border text-foreground hover:bg-warm-50 inline-flex items-center justify-center gap-1 rounded-[8px] border bg-white px-3 py-1.5 text-[12px] font-bold disabled:opacity-50"
+                  className="border-border text-foreground hover:bg-warm-50 inline-flex items-center justify-center gap-1 rounded-[8px] border bg-white px-3 py-1.5 text-[13px] font-bold disabled:opacity-50"
                 >
                   <Pencil className="size-3" strokeWidth={2} />
                   수정
@@ -129,7 +129,7 @@ export function AddressList({ initial }: { initial: AddressItem[] }) {
                   type="button"
                   onClick={() => onDelete(a.id)}
                   disabled={pending}
-                  className="border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex items-center justify-center gap-1 rounded-[8px] border bg-white px-3 py-1.5 text-[12px] font-bold disabled:opacity-50"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex items-center justify-center gap-1 rounded-[8px] border bg-white px-3 py-1.5 text-[13px] font-bold disabled:opacity-50"
                 >
                   <Trash2 className="size-3" strokeWidth={2} />
                   삭제
@@ -312,7 +312,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-bold">
+      <label className="mb-1.5 block text-[14px] font-bold">
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </label>

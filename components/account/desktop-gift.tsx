@@ -177,7 +177,7 @@ export function DesktopGift() {
               }}
             >
               {g.state === 'unclaimed' && (
-                <span className="absolute top-3 right-3 rounded-full bg-[#11161E] px-2 py-0.5 text-[10px] font-extrabold tracking-widest text-white">
+                <span className="absolute top-3 right-3 rounded-full bg-[#11161E] px-2 py-0.5 text-[12px] font-extrabold tracking-widest text-white">
                   NEW
                 </span>
               )}

@@ -105,17 +105,17 @@ export function MobileMileageCharge({
                 }}
               >
                 {m.recommend && (
-                  <span className="absolute top-[-7px] right-2 rounded-full bg-[#D4A24C] px-1.5 py-0.5 text-[12px] font-extrabold text-[#11161E]">
+                  <span className="absolute top-[-7px] right-2 rounded-full bg-[#D4A24C] px-1.5 py-0.5 text-[13px] font-extrabold text-[#11161E]">
                     추천
                   </span>
                 )}
                 {isDisabled && (
-                  <span className="border-warm-300 text-warm-600 absolute top-[-7px] right-2 rounded-full border bg-white px-1.5 py-0.5 text-[11px] font-bold">
+                  <span className="border-warm-300 text-warm-600 absolute top-[-7px] right-2 rounded-full border bg-white px-1.5 py-0.5 text-[12px] font-bold">
                     준비중
                   </span>
                 )}
                 <div
-                  className="text-[12px] font-bold tracking-[0.04em]"
+                  className="text-[13px] font-bold tracking-[0.04em]"
                   style={{ opacity: isDisabled ? 0.6 : 0.75 }}
                 >
                   {m.kind}
@@ -175,14 +175,14 @@ export function MobileMileageCharge({
       {/* Bank info for bank_transfer */}
       {bankInfo && (
         <div className="border-border bg-muted/40 mx-4 mt-3 rounded-xl border p-3">
-          <div className="text-ticketa-blue-700 mb-1 flex items-center gap-1.5 text-[11px] font-bold tracking-[0.06em] uppercase">
+          <div className="text-ticketa-blue-700 mb-1 flex items-center gap-1.5 text-[12px] font-bold tracking-[0.06em] uppercase">
             <Building2 className="size-3.5" strokeWidth={1.75} />
             플랫폼 입금 계좌
           </div>
           <div className="text-[14px] font-bold">
             {bankInfo.bankName} · <span className="font-mono">{bankInfo.account}</span>
           </div>
-          <div className="text-muted-foreground text-[13px]">예금주 {bankInfo.holder}</div>
+          <div className="text-muted-foreground text-[14px]">예금주 {bankInfo.holder}</div>
         </div>
       )}
 

@@ -118,7 +118,7 @@ export async function MyRoomShell({
           </div>
           {NAV.map((g, gi) => (
             <div key={g.group} className={gi === 0 ? 'mt-3.5' : 'mt-4'}>
-              <div className="text-muted-foreground px-1 pb-1.5 text-[13px] font-bold tracking-[0.04em] uppercase">
+              <div className="text-muted-foreground px-1 pb-1.5 text-[14px] font-bold tracking-[0.04em] uppercase">
                 {g.group}
               </div>
               {g.items.map((it) => {
@@ -141,7 +141,7 @@ export async function MyRoomShell({
                     {sub && (
                       <div
                         className={cn(
-                          'mt-0.5 text-[13px] tabular-nums',
+                          'mt-0.5 text-[14px] tabular-nums',
                           isActive ? 'text-ticketa-blue-700/70' : 'text-muted-foreground',
                         )}
                       >

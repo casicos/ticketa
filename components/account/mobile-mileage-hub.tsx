@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatLedgerMemo } from '@/lib/format';
 
 type LedgerRow = {
   id: number;
@@ -9,9 +10,12 @@ type LedgerRow = {
 };
 
 type Props = {
+  /** cash_balance + pg_locked (출금 진행 중 제외) */
   total: number;
+  /** 출금 가능 = cash_balance */
   withdrawable: number;
-  pgLocked: number;
+  /** 출금 신청 후 어드민 처리 대기 합계 — 보유 합산에만 반영 */
+  inFlightWithdraw: number;
   ledger: LedgerRow[];
 };
 
@@ -41,7 +45,9 @@ function ledgerStyle(type: string): { bg: string; color: string } {
   }
 }
 
-export function MobileMileageHub({ total, withdrawable, pgLocked, ledger }: Props) {
+export function MobileMileageHub({ total, withdrawable, inFlightWithdraw, ledger }: Props) {
+  const heldTotal = total + inFlightWithdraw;
+  const spendable = total;
   return (
     <div className="flex flex-col pb-6">
       {/* Balance hero */}
@@ -55,18 +61,27 @@ export function MobileMileageHub({ total, withdrawable, pgLocked, ledger }: Prop
             style={{ background: 'radial-gradient(circle, rgba(0,102,255,0.22), transparent 65%)' }}
           />
           <div className="relative">
-            <div className="text-[10px] font-bold tracking-[0.12em] text-[#A8C0FF]">
-              AVAILABLE BALANCE
+            <div className="text-[12px] font-bold tracking-[0.12em] text-[#A8C0FF]">
+              MILEAGE BALANCE
             </div>
-            <div className="mt-2.5 flex items-baseline gap-1.5">
+            <div className="text-[13px] text-white/55">보유 마일리지</div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
               <span className="text-4xl leading-none font-black tracking-tight tabular-nums">
-                {total.toLocaleString('ko-KR')}
+                {heldTotal.toLocaleString('ko-KR')}
               </span>
               <span className="text-base font-extrabold text-[#D4A24C]">M</span>
             </div>
-            <div className="mt-1.5 text-xs text-white/55">
-              출금 가능 {withdrawable.toLocaleString('ko-KR')}원 · 잠김{' '}
-              {pgLocked.toLocaleString('ko-KR')}원
+            <div className="mt-1.5 text-[12px] text-white/60">
+              사용 가능{' '}
+              <strong className="text-white tabular-nums">
+                {spendable.toLocaleString('ko-KR')}원
+              </strong>
+              <span className="ml-2">
+                · 출금 가능{' '}
+                <strong className="text-white tabular-nums">
+                  {withdrawable.toLocaleString('ko-KR')}원
+                </strong>
+              </span>
             </div>
             <div className="mt-3.5 grid grid-cols-3 gap-1.5">
               {[
@@ -175,7 +190,9 @@ export function MobileMileageHub({ total, withdrawable, pgLocked, ledger }: Prop
                     {ledgerIcon(r.type)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-bold">{r.memo ?? r.type}</div>
+                    <div className="truncate text-sm font-bold">
+                      {formatLedgerMemo(r.memo, r.type)}
+                    </div>
                     <div className="text-muted-foreground font-mono text-xs">
                       {new Date(r.created_at).toLocaleDateString('ko-KR')}
                     </div>

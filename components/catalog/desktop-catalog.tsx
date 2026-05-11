@@ -3,21 +3,18 @@ import { Button } from '@/components/ui/button';
 import { BrandFilter } from './brand-filter';
 import { DesktopListingCard, type ListingCardData } from './listing-card';
 import { VerifiedBadge, StoreNameLabel, AnonSellerLabel } from './listing-badges';
-import { formatKRW } from '@/lib/format';
 
 export function DesktopCatalog({
   listings,
   parsed,
   buildBrandHref,
   canBuy,
-  balance,
   className = '',
 }: {
   listings: ListingCardData[];
   parsed: { q: string; brand: string; sort: string };
   buildBrandHref: (brand: string) => string;
   canBuy: boolean;
-  balance: { total: number; withdrawable: number; pgLocked: number } | null;
   className?: string;
 }) {
   const { q, brand, sort } = parsed;
@@ -38,20 +35,7 @@ export function DesktopCatalog({
               : '에이전트가 직접 검수한 매물만 보여드려요. 평균 검수 시간 12분.'}
           </p>
         </div>
-        {canBuy && balance ? (
-          <div className="border-border rounded-xl border bg-white px-4 py-2.5">
-            <p className="text-ticketa-blue-700 text-[10.5px] font-bold tracking-[0.06em] uppercase">
-              내 마일리지
-            </p>
-            <p className="mt-0.5 text-lg font-extrabold tracking-tight tabular-nums">
-              {formatKRW(balance.total)}
-            </p>
-            <p className="text-muted-foreground mt-0.5 text-[10.5px]">
-              출금가능 {formatKRW(balance.withdrawable)}
-              {balance.pgLocked > 0 && ` · PG락 ${formatKRW(balance.pgLocked)}`}
-            </p>
-          </div>
-        ) : null}
+        {/* 내 마일리지 패널은 /account/mileage 허브에서 보여줌 — 카탈로그 헤더에서는 제거 */}
       </header>
 
       <BrandFilter activeBrand={brand} buildHref={buildBrandHref} size="md" className="mb-4" />
@@ -60,17 +44,17 @@ export function DesktopCatalog({
       <div className="border-border mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-white px-4 py-3">
         <div className="flex items-center gap-2">
           <VerifiedBadge size="sm" />
-          <span className="text-warm-700 text-[13px]">관리자 검수 완료 — 결제 즉시 발송</span>
+          <span className="text-warm-700 text-[14px]">관리자 검수 완료 — 결제 즉시 발송</span>
         </div>
         <span className="bg-border h-4 w-px" />
         <div className="flex items-center gap-2">
           <StoreNameLabel name="공식 상점" size="sm" />
-          <span className="text-warm-700 text-[13px]">에이전트 직영 매물</span>
+          <span className="text-warm-700 text-[14px]">에이전트 직영 매물</span>
         </div>
         <span className="bg-border h-4 w-px" />
         <div className="flex items-center gap-2">
           <AnonSellerLabel code="ABC1234" size="sm" />
-          <span className="text-warm-700 text-[13px]">P2P 매물 (개인 판매자)</span>
+          <span className="text-warm-700 text-[14px]">P2P 매물 (개인 판매자)</span>
         </div>
       </div>
 

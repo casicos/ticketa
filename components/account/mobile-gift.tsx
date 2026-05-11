@@ -50,7 +50,7 @@ export function MobileGift() {
             }}
           />
           <div className="relative">
-            <div className="text-ticketa-gold-500 text-[10px] font-extrabold tracking-widest uppercase">
+            <div className="text-ticketa-gold-500 text-[12px] font-extrabold tracking-widest uppercase">
               상품권 보내기
             </div>
             <h2 className="mt-1.5 mb-4 text-base leading-snug font-extrabold tracking-tight">
@@ -101,7 +101,7 @@ export function MobileGift() {
       <div className="mx-4 mt-3">
         <div className="divide-border border-border grid grid-cols-2 divide-x overflow-hidden rounded-xl border bg-white">
           <div className="px-4 py-3">
-            <div className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+            <div className="text-muted-foreground text-[12px] font-bold tracking-widest uppercase">
               받은 상품권
             </div>
             {/* TODO: backend wiring — needs gifts table */}
@@ -111,7 +111,7 @@ export function MobileGift() {
             <div className="text-ticketa-gold-700 text-xs font-bold">미수령 1건</div>
           </div>
           <div className="px-4 py-3">
-            <div className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+            <div className="text-muted-foreground text-[12px] font-bold tracking-widest uppercase">
               보낸 상품권
             </div>
             <div className="mt-0.5 text-lg font-extrabold tabular-nums">
@@ -150,7 +150,7 @@ export function MobileGift() {
             }}
           >
             {g.state === 'unclaimed' && (
-              <span className="absolute top-3 right-3 rounded-full bg-[#11161E] px-2 py-0.5 text-[10px] font-extrabold tracking-widest text-white">
+              <span className="absolute top-3 right-3 rounded-full bg-[#11161E] px-2 py-0.5 text-[12px] font-extrabold tracking-widest text-white">
                 NEW
               </span>
             )}
@@ -158,7 +158,7 @@ export function MobileGift() {
               <DeptMark dept={g.dept} size={28} />
               <div>
                 <div className="text-warm-700 text-xs font-semibold">{g.from}님이 보냄</div>
-                <div className="text-muted-foreground text-[11px]">{g.date}</div>
+                <div className="text-muted-foreground text-[12px]">{g.date}</div>
               </div>
             </div>
             <div className="text-lg font-extrabold tabular-nums">

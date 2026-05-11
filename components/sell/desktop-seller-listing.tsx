@@ -129,7 +129,7 @@ export function DesktopSellerListing({
           ].map(([l, v]) => (
             <div key={l} className="px-5 py-3 text-center">
               <div className="text-sm font-extrabold tabular-nums">{v}</div>
-              <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <div className="text-muted-foreground text-[12px] font-bold tracking-wider uppercase">
                 {l}
               </div>
             </div>
@@ -203,10 +203,10 @@ export function DesktopSellerListing({
 
             {adminMemo && (
               <div className="border-border bg-muted/40 mt-5 rounded-lg border p-3.5">
-                <p className="text-muted-foreground text-[13px] font-bold tracking-wider uppercase">
+                <p className="text-muted-foreground text-[14px] font-bold tracking-wider uppercase">
                   어드민 메모
                 </p>
-                <pre className="mt-1.5 text-[13px] leading-relaxed whitespace-pre-wrap">
+                <pre className="mt-1.5 text-[14px] leading-relaxed whitespace-pre-wrap">
                   {adminMemo}
                 </pre>
               </div>

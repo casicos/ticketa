@@ -38,7 +38,7 @@ export function MobileAgentInbound({ className }: { className?: string }) {
           return (
             <div key={n} className="flex flex-1 items-center">
               <span
-                className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold"
+                className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold"
                 style={{
                   background: done ? '#1F6B43' : active ? '#D4A24C' : 'var(--warm-200)',
                   color: done || active ? '#fff' : 'var(--warm-700)',
@@ -59,7 +59,7 @@ export function MobileAgentInbound({ className }: { className?: string }) {
 
       {/* Scrollable body */}
       <div className="bg-background flex-1 overflow-y-auto p-3.5">
-        <div className="text-ticketa-gold-700 mb-1 text-[13px] font-extrabold tracking-wider">
+        <div className="text-ticketa-gold-700 mb-1 text-[14px] font-extrabold tracking-wider">
           STEP {CURRENT_STEP} / {STEPS}
         </div>
         <h2 className="mb-3.5 text-[19px] font-extrabold tracking-tight">수량 · 가격</h2>

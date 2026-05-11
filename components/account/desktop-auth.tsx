@@ -95,7 +95,7 @@ export function DesktopAuth({
           </div>
           <div className="min-w-0 flex-1">
             <div
-              className="text-[13px] font-bold tracking-[0.08em]"
+              className="text-[14px] font-bold tracking-[0.08em]"
               style={{ color: phoneVerified ? '#7DC79F' : '#FFC87A' }}
             >
               {phoneVerified ? 'VERIFIED' : 'PENDING'}
@@ -115,7 +115,7 @@ export function DesktopAuth({
             </div>
           </div>
           <div className="hidden text-right sm:block">
-            <div className="text-[13px] font-bold tracking-[0.04em] text-white/50">회원번호</div>
+            <div className="text-[14px] font-bold tracking-[0.04em] text-white/50">회원번호</div>
             <div className="mt-0.5 text-[16px] font-extrabold tracking-[-0.012em] tabular-nums">
               {memberId}
             </div>
@@ -147,7 +147,7 @@ export function DesktopAuth({
                 <div className="flex items-center gap-2">
                   <span className="text-[15px] font-bold">{m.l}</span>
                   <span
-                    className="rounded-[4px] px-1.5 py-0.5 text-[13px] font-extrabold tracking-[0.02em]"
+                    className="rounded-[4px] px-1.5 py-0.5 text-[14px] font-extrabold tracking-[0.02em]"
                     style={{
                       background:
                         m.state === 'ok' ? 'rgba(46,124,82,0.10)' : 'rgba(212,162,76,0.18)',
@@ -232,7 +232,7 @@ export function DesktopAuth({
           </button>
         </div>
         <div className="border-border overflow-hidden rounded-lg border">
-          <div className="border-border bg-warm-50 text-muted-foreground grid grid-cols-[120px_1fr_140px_100px] border-b px-4 py-2.5 text-[13px] font-bold tracking-wider uppercase">
+          <div className="border-border bg-warm-50 text-muted-foreground grid grid-cols-[120px_1fr_140px_100px] border-b px-4 py-2.5 text-[14px] font-bold tracking-wider uppercase">
             <span>일시</span>
             <span>활동</span>
             <span>위치 / 기기</span>

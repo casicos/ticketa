@@ -91,7 +91,7 @@ export function MobileSellListings({
       {/* Summary tiles */}
       <div className="grid grid-cols-2 gap-2 px-4 py-4">
         <div className="surface-card px-3.5 py-3">
-          <div className="text-muted-foreground text-[12px] font-bold tracking-[0.04em] uppercase">
+          <div className="text-muted-foreground text-[13px] font-bold tracking-[0.04em] uppercase">
             판매중
           </div>
           <div className="mt-0.5 text-[22px] font-extrabold tracking-[-0.022em] tabular-nums">
@@ -100,7 +100,7 @@ export function MobileSellListings({
           </div>
         </div>
         <div className="surface-card px-3.5 py-3">
-          <div className="text-ticketa-gold-700 text-[12px] font-bold tracking-[0.04em] uppercase">
+          <div className="text-ticketa-gold-700 text-[13px] font-bold tracking-[0.04em] uppercase">
             거래 완료
           </div>
           <div className="mt-0.5 text-[22px] font-extrabold tracking-[-0.022em] tabular-nums">
@@ -150,7 +150,7 @@ export function MobileSellListings({
                     <div className="truncate text-[14px] font-bold tracking-[-0.012em]">
                       {r.sku?.display_name ?? '알 수 없는 상품'}
                     </div>
-                    <div className="text-muted-foreground font-mono text-[13px] tabular-nums">
+                    <div className="text-muted-foreground font-mono text-[14px] tabular-nums">
                       {r.id.slice(0, 12).toUpperCase()}
                     </div>
                   </div>
@@ -165,7 +165,7 @@ export function MobileSellListings({
                   {stageNum !== null ? (
                     <StageBadge stage={stageNum} label={LISTING_STATUS_LABELS[r.status]} />
                   ) : (
-                    <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-2 py-0.5 text-[12px] font-medium">
+                    <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-2 py-0.5 text-[13px] font-medium">
                       {LISTING_STATUS_LABELS[r.status]}
                     </span>
                   )}

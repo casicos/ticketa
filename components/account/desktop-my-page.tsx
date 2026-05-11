@@ -35,7 +35,7 @@ export function MyPageSidebar({ active }: { active: string }) {
       </div>
       {SIDEBAR_NAV.map((g, i) => (
         <div key={i} className={i === 0 ? 'mt-3.5' : 'mt-4.5'}>
-          <div className="text-muted-foreground px-1 pb-1.5 text-[13px] font-bold tracking-[0.04em] uppercase">
+          <div className="text-muted-foreground px-1 pb-1.5 text-[14px] font-bold tracking-[0.04em] uppercase">
             {g.group}
           </div>
           {g.items.map((it) => (
@@ -112,12 +112,12 @@ export function DesktopMyPage({
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-bold tracking-[0.08em] text-[#E5C387]">
+                  <span className="text-[14px] font-bold tracking-[0.08em] text-[#E5C387]">
                     {tier}
                   </span>
                   {points > 0 && (
                     <span
-                      className="rounded px-2 py-0.5 text-[13px] font-bold text-[#E5C387]"
+                      className="rounded px-2 py-0.5 text-[14px] font-bold text-[#E5C387]"
                       style={{ background: 'rgba(212,162,76,0.18)' }}
                     >
                       {points.toLocaleString()}P
@@ -260,7 +260,7 @@ export function DesktopMyPage({
           {balance.withdrawable > 0 && (
             <div className="border-success/30 bg-success/5 mt-5 flex items-center justify-between rounded-xl border px-5 py-4">
               <div>
-                <div className="text-success text-[13px] font-bold tracking-[0.06em] uppercase">
+                <div className="text-success text-[14px] font-bold tracking-[0.06em] uppercase">
                   출금 가능 금액
                 </div>
                 <MoneyDisplay value={balance.withdrawable} size="lg" className="mt-1" />
