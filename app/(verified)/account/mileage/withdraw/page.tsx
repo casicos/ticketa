@@ -44,7 +44,7 @@ export default async function WithdrawPage({
   const supabase = await createSupabaseServerClient();
 
   const [balance, accountsRes, withdrawFee, historyRes] = await Promise.all([
-    fetchMyMileageBalance(supabase),
+    fetchMyMileageBalance(supabase, current.auth.id),
     supabase
       .from('seller_payout_accounts')
       .select('id, bank_code, account_number_last4, account_holder')

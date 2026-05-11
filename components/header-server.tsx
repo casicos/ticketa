@@ -17,7 +17,7 @@ export async function HeaderServer() {
   let balance = 0;
   if (current.profile?.phone_verified) {
     const supabase = await createSupabaseServerClient();
-    const b = await fetchMyMileageBalance(supabase);
+    const b = await fetchMyMileageBalance(supabase, current.auth.id);
     balance = b.total;
   }
 

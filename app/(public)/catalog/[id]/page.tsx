@@ -77,7 +77,7 @@ export default async function CatalogListingDetailPage({
   const canBuy = !!current && (current.profile?.phone_verified ?? false) && !isOwner;
   const balance =
     current && (current.profile?.phone_verified ?? false)
-      ? await fetchMyMileageBalance(supabase)
+      ? await fetchMyMileageBalance(supabase, current.auth.id)
       : null;
   // 보는 사람이 에이전트면 "매입" 용어, 일반 회원이면 "구매" 용어로 표기
   const viewerIsAgent = current?.roles.includes('agent') ?? false;

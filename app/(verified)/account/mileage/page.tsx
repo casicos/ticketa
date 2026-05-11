@@ -60,7 +60,7 @@ export default async function MileageHubPage({
   const supabase = await createSupabaseServerClient();
 
   const [balance, ledgerResult, chargeReqResult, withdrawReqResult, bankInfo] = await Promise.all([
-    fetchMyMileageBalance(supabase),
+    fetchMyMileageBalance(supabase, current.auth.id),
     supabase
       .from('mileage_ledger')
       .select('id, type, amount, memo, created_at, related_listing_id')

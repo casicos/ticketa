@@ -26,7 +26,10 @@ export default async function ChargePage({
   const returnTo = sanitizeRedirectPath(params.returnTo ?? null);
 
   const supabase = await createSupabaseServerClient();
-  const [balance, bankRaw] = await Promise.all([fetchMyMileageBalance(supabase), fetchBankInfo()]);
+  const [balance, bankRaw] = await Promise.all([
+    fetchMyMileageBalance(supabase, current.auth.id),
+    fetchBankInfo(),
+  ]);
   const bank = { bankName: bankRaw.bank_name, account: bankRaw.account, holder: bankRaw.holder };
 
   const sharedProps = {

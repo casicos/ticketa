@@ -69,7 +69,7 @@ export default async function AccountPage() {
   const [sellCounts, buyCounts, mileage] = await Promise.all([
     getSellCounts(supabase, current.auth.id),
     getBuyCounts(supabase, current.auth.id),
-    fetchMyMileageBalance(supabase),
+    fetchMyMileageBalance(supabase, current.auth.id),
   ]);
 
   const displayName =

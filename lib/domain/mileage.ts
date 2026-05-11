@@ -178,17 +178,20 @@ export type MileageBalance = {
  * 현재 로그인 사용자의 마일리지 잔액 조회.
  * RLS `mileage_accounts_self` 가 user_id = auth.uid() 로 필터하므로
  * ssr anon 클라이언트만으로 안전하게 조회 가능.
- * 미로그인 또는 계좌 미생성 시 { total:0, withdrawable:0, pgLocked:0 }.
+ *
+ * 호출자는 `getCurrentUser()` 등으로 미리 확인한 userId 를 넘긴다.
+ * (이전엔 내부에서 `supabase.auth.getUser()` 호출 — Auth API 200ms RTT 추가 비용.)
+ * 미로그인이면 호출 자체를 안 하도록 호출자가 가드하고, 계좌 미생성 시엔
+ * { total:0, withdrawable:0, pgLocked:0 } 가 반환됨.
  */
-export async function fetchMyMileageBalance(supabase: SupabaseClient): Promise<MileageBalance> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { total: 0, withdrawable: 0, pgLocked: 0 };
+export async function fetchMyMileageBalance(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<MileageBalance> {
   const { data } = await supabase
     .from('mileage_accounts')
     .select('cash_balance,pg_locked,balance')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .maybeSingle<{
       cash_balance: number | null;
       pg_locked: number | null;
