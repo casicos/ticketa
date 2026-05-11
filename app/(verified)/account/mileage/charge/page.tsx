@@ -19,13 +19,16 @@ export default async function ChargePage({
     error_message?: string;
   }>;
 }) {
-  const current = await getCurrentUser();
+  // current + params + supabase 병렬화. balance 는 user.id 필요해서 그 다음 단계.
+  const [current, params, supabase] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+    createSupabaseServerClient(),
+  ]);
   if (!current) redirect('/login?next=/account/mileage/charge');
 
-  const params = await searchParams;
   const returnTo = sanitizeRedirectPath(params.returnTo ?? null);
 
-  const supabase = await createSupabaseServerClient();
   const [balance, bankRaw] = await Promise.all([
     fetchMyMileageBalance(supabase, current.auth.id),
     fetchBankInfo(),

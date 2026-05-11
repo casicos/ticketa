@@ -37,11 +37,13 @@ export default async function WithdrawPage({
     error_message?: string;
   }>;
 }) {
-  const current = await getCurrentUser();
+  // current + params + supabase 병렬화. 이후 4개 쿼리는 user.id / 인증 의존.
+  const [current, params, supabase] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+    createSupabaseServerClient(),
+  ]);
   if (!current) redirect('/login?next=/account/mileage/withdraw');
-
-  const params = await searchParams;
-  const supabase = await createSupabaseServerClient();
 
   const [balance, accountsRes, withdrawFee, historyRes] = await Promise.all([
     fetchMyMileageBalance(supabase, current.auth.id),

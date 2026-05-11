@@ -8,7 +8,8 @@ import { MyRoomShell } from '@/components/account/my-room-shell';
 import { MobileAuth } from '@/components/account/mobile-auth';
 
 export default async function VerificationPage() {
-  const current = await getCurrentUser();
+  // current + supabase 병렬화. phone/payout 조회는 user.id 의존이라 뒤에.
+  const [current, supabase] = await Promise.all([getCurrentUser(), createSupabaseServerClient()]);
   if (!current) redirect('/login?next=/account/verification');
 
   const phoneVerified = current.profile?.phone_verified ?? false;
@@ -17,7 +18,6 @@ export default async function VerificationPage() {
 
   // phone 은 JWT 미포함 (0047 migration 이후) — 이 페이지가 표시용으로 별도 조회.
   // 활성 출금계좌도 같은 supabase 클라이언트에서 병렬 조회.
-  const supabase = await createSupabaseServerClient();
   const [phoneRes, payoutRes] = await Promise.all([
     supabase
       .from('users')

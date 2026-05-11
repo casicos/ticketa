@@ -17,7 +17,13 @@ export default async function SellListingsPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const current = await getCurrentUser();
+  // params, supabase, current 를 병렬화. listing 쿼리는 user.id 가 필요해서 current 뒤로.
+  const [current, params, supabase] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+    createSupabaseServerClient(),
+  ]);
+
   if (!current) {
     redirect(`/login?next=${encodeURIComponent('/sell/listings')}`);
   }
@@ -25,12 +31,10 @@ export default async function SellListingsPage({
     redirect(`/verify-phone?next=${encodeURIComponent('/sell/listings')}`);
   }
 
-  const params = await searchParams;
   const activeTab: SellTab = VALID_TABS.includes(params.tab as SellTab)
     ? (params.tab as SellTab)
     : 'all';
 
-  const supabase = await createSupabaseServerClient();
   const { data: rowsRaw } = await supabase
     .from('listing')
     .select(

@@ -11,25 +11,26 @@ type Props = {
 };
 
 export default async function BuyOrdersPage({ searchParams }: Props) {
-  const params = await searchParams;
-  const activeTab = (params.tab ?? 'all') as BuyListingStatus | 'all';
-
-  const current = await getCurrentUser();
+  // params + auth + supabase 병렬화. listing/gifts 쿼리는 user.id 의존이라 그 다음 단계.
+  const [params, current, supabase] = await Promise.all([
+    searchParams,
+    getCurrentUser(),
+    createSupabaseServerClient(),
+  ]);
   if (!current) redirect('/login?next=/buy/orders');
 
-  const supabase = await createSupabaseServerClient();
+  const activeTab = (params.tab ?? 'all') as BuyListingStatus | 'all';
 
-  let query = supabase
+  // ALL listings 를 한 번에 가져와서 탭 필터 + KPI 계산을 모두 in-memory 로 처리.
+  // 기존: status=activeTab 쿼리 + 별도 ALL 쿼리 = 2 round-trip → 1 round-trip 으로 평탄화.
+  // 트레이드오프: 사용자당 listing row 수 (MVP <100) 작아서 over-fetch 비용 미미.
+  const listingQuery = supabase
     .from('listing')
     .select(
       'id, status, quantity_offered, unit_price, gross_amount, purchased_at, handed_over_at, completed_at, cancelled_at, sku:sku_id(brand, denomination, display_name, thumbnail_url)',
     )
     .eq('buyer_id', current.auth.id)
     .order('purchased_at', { ascending: false });
-
-  if (activeTab !== 'all') {
-    query = query.eq('status', activeTab);
-  }
 
   // 내가 보낸 선물은 결제 시점에 거래완료로 간주.
   // /buy/orders 에 status='completed' 가상 행으로 합쳐서 보여줌.
@@ -43,8 +44,8 @@ export default async function BuyOrdersPage({ searchParams }: Props) {
     .neq('status', 'expired')
     .order('sent_at', { ascending: false });
 
-  const [listingRes, giftsRes] = await Promise.all([query, giftsQuery]);
-  const listings = (listingRes.data ?? []) as unknown as BuyOrderRow[];
+  const [listingRes, giftsRes] = await Promise.all([listingQuery, giftsQuery]);
+  const allListings = (listingRes.data ?? []) as unknown as BuyOrderRow[];
   const giftRows = (giftsRes.data ?? []) as unknown as Array<{
     id: string;
     qty: number;
@@ -71,32 +72,29 @@ export default async function BuyOrdersPage({ searchParams }: Props) {
     sku: g.sku,
   }));
 
+  // 탭 필터링은 in-memory 로 (활성 탭이 'all' 이 아닐 때 listing 만 필터).
+  const filteredListings =
+    activeTab === 'all' ? allListings : allListings.filter((r) => r.status === activeTab);
+
   const mergedRows =
     activeTab === 'all' || activeTab === 'completed'
-      ? [...listings, ...giftAsBuyRows].sort((a, b) => {
+      ? [...filteredListings, ...giftAsBuyRows].sort((a, b) => {
           const ad = a.purchased_at ?? '';
           const bd = b.purchased_at ?? '';
           return bd.localeCompare(ad);
         })
-      : listings;
+      : filteredListings;
 
-  // Compute savings and counts from full data (need all rows for KPIs)
-  const allQuery = supabase
-    .from('listing')
-    .select('id, status, quantity_offered, unit_price, gross_amount, sku:sku_id(denomination)')
-    .eq('buyer_id', current.auth.id);
-  const { data: allData } = await allQuery;
-  const allListings = (allData ?? []) as unknown as Array<{
-    id: string;
-    status: string;
-    quantity_offered: number;
-    unit_price: number;
-    gross_amount: number | null;
-    sku: { denomination: number } | null;
-  }>;
-
+  // KPI 계산용 슬림 뷰 (denomination 만 필요).
   const allWithGifts = [
-    ...allListings,
+    ...allListings.map((r) => ({
+      id: r.id,
+      status: r.status,
+      quantity_offered: r.quantity_offered,
+      unit_price: r.unit_price,
+      gross_amount: r.gross_amount,
+      sku: r.sku ? { denomination: r.sku.denomination } : null,
+    })),
     ...giftRows.map((g) => ({
       id: g.id,
       status: 'completed',

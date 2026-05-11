@@ -62,10 +62,10 @@ async function getBuyCounts(supabase: SupabaseServerClient, userId: string): Pro
 }
 
 export default async function AccountPage() {
-  const current = await getCurrentUser();
+  // current + supabase 병렬화. 이후 count/mileage 쿼리는 user.id 의존.
+  const [current, supabase] = await Promise.all([getCurrentUser(), createSupabaseServerClient()]);
   if (!current) redirect('/login?next=/account');
 
-  const supabase = await createSupabaseServerClient();
   const [sellCounts, buyCounts, mileage] = await Promise.all([
     getSellCounts(supabase, current.auth.id),
     getBuyCounts(supabase, current.auth.id),
