@@ -42,11 +42,12 @@ export async function proxy(request: NextRequest) {
   // "could be insecure" 경고도 사라짐.
   let userId: string | null = null;
   let roles: Role[] = [];
+  let appMeta: Record<string, unknown> | undefined;
   try {
     const { data, error } = await supabase.auth.getClaims();
     if (!error && data?.claims) {
       userId = typeof data.claims.sub === 'string' ? data.claims.sub : null;
-      const appMeta = (data.claims as { app_metadata?: unknown }).app_metadata;
+      appMeta = (data.claims as { app_metadata?: Record<string, unknown> }).app_metadata;
       roles = extractRoles(appMeta);
     }
   } catch (e) {
@@ -86,13 +87,26 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/sell') || pathname.startsWith('/buy') || pathname === '/account';
 
   if (needsPhoneVerified) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('phone_verified')
-      .eq('id', userId)
-      .maybeSingle<{ phone_verified: boolean }>();
+    // JWT 우선: 0047 migration 후엔 app_metadata.phone_verified 가 채워져 있음.
+    // 값이 명시적으로 true 면 통과. false 면 verify-phone 으로.
+    // 값이 undefined (pre-backfill 토큰) 면 DB fallback.
+    const claimVal = appMeta?.['phone_verified'];
+    let phoneVerified: boolean;
+    if (claimVal === true) {
+      phoneVerified = true;
+    } else if (claimVal === false) {
+      phoneVerified = false;
+    } else {
+      // Fallback: 오래된 토큰(pre-backfill). DB 한 번 더 조회.
+      const { data: profile } = await supabase
+        .from('users')
+        .select('phone_verified')
+        .eq('id', userId)
+        .maybeSingle<{ phone_verified: boolean }>();
+      phoneVerified = !!profile?.phone_verified;
+    }
 
-    if (!profile?.phone_verified) {
+    if (!phoneVerified) {
       const redirect = request.nextUrl.clone();
       redirect.pathname = '/verify-phone';
       redirect.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`;

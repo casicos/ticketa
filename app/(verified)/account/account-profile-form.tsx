@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { updateProfileAction } from './actions';
 
 export function AccountProfileForm({
@@ -26,8 +27,20 @@ export function AccountProfileForm({
       fd.set('nickname', nickname);
       fd.set('marketing_opt_in', marketingOptIn ? 'true' : 'false');
       const r = await updateProfileAction(fd);
-      if (r.ok) toast.success('프로필이 저장됐어요');
-      else toast.error(r.message ?? '저장 실패');
+      if (!r.ok) {
+        toast.error(r.message ?? '저장 실패');
+        return;
+      }
+      // nickname 은 0047 migration 으로 JWT app_metadata 에 캐싱됨.
+      // Server Action 이 DB 를 갱신했지만 클라이언트 쿠키 토큰은 stale.
+      // refreshSession() 으로 새 토큰 받아서 다음 페이지 로드의 getClaims() 가 최신 값을 봄.
+      try {
+        const supabase = createSupabaseBrowserClient();
+        await supabase.auth.refreshSession();
+      } catch {
+        // refresh 실패는 치명적이지 않음 — 다음 페이지 진입 시 DB fallback 이 처리.
+      }
+      toast.success('프로필이 저장됐어요');
     });
   };
 

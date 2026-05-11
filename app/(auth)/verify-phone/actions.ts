@@ -1,6 +1,5 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { verifyOtpSchema, normalizeKoreanPhone } from '@/lib/domain/schemas/auth';
 import { withServerAction } from '@/lib/server-actions';
@@ -91,7 +90,7 @@ export async function requestPhoneOtpAction(formData: FormData) {
  * 성공 시 public.users.phone_verified=true UPDATE 후 next 로 redirect.
  */
 export async function verifyPhoneOtpAction(formData: FormData) {
-  const result = await withServerAction('verifyPhoneOtp', async () => {
+  return withServerAction('verifyPhoneOtp', async () => {
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -132,7 +131,8 @@ export async function verifyPhoneOtpAction(formData: FormData) {
         throw err;
       }
       // 본인인증 직후엔 환영 화면(/welcome)을 거쳐 nextPath 로 이어짐.
-      return { redirect: `/welcome?next=${encodeURIComponent(nextParam)}` };
+      // 클라이언트가 refreshSession() 후 router.push 로 이동 (JWT 캐시 갱신 보장).
+      return { redirectTo: `/welcome?next=${encodeURIComponent(nextParam)}` };
     }
 
     const parsed = verifyOtpSchema.safeParse({ token: String(formData.get('token') ?? '') });
@@ -164,11 +164,7 @@ export async function verifyPhoneOtpAction(formData: FormData) {
       throw err;
     }
 
-    return { redirect: nextParam };
+    // 클라이언트가 refreshSession() 후 router.push 로 이동 (JWT 캐시 갱신 보장).
+    return { redirectTo: nextParam };
   });
-
-  if (result.ok) {
-    redirect(result.data.redirect);
-  }
-  return result;
 }

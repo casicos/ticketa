@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { AuthField } from '@/components/auth/auth-field';
 import { cn } from '@/lib/utils';
 import { formatKoreanPhone } from '@/lib/format';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { verifyPhoneOtpAction } from './actions';
 
 type Carrier = {
@@ -68,12 +69,23 @@ export function VerifyPhoneForm({
       fd.set('next', nextPath);
 
       const result = await verifyPhoneOtpAction(fd);
-      // 성공 시 server action 이 redirect 하므로 여기 도달 = 실패.
-      if (result && !result.ok) {
+      if (!result.ok) {
         const msg = result.message ?? '본인인증에 실패했어요';
         setError(msg);
         toast.error(msg);
+        return;
       }
+      // JWT app_metadata 의 phone_verified=true 가 0047 트리거로 DB 에 기록됐지만
+      // 클라이언트 쿠키 토큰은 여전히 stale → refreshSession() 으로 즉시 재발급.
+      // 이후 router.push 시 proxy.ts 가 새 JWT 의 phone_verified=true 를 인식해서
+      // /sell, /buy, /account 진입 시 verify-phone 으로 다시 튕기지 않음.
+      try {
+        const supabase = createSupabaseBrowserClient();
+        await supabase.auth.refreshSession();
+      } catch {
+        // refresh 실패는 치명적이지 않음 — 다음 페이지 진입 시 DB fallback 이 처리.
+      }
+      router.push(result.data.redirectTo);
     });
   };
 

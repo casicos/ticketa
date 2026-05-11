@@ -31,6 +31,40 @@ function isSupabaseAuthError(e: unknown): boolean {
 }
 
 /**
+ * JWT app_metadata 에서 프로필을 복원.
+ *
+ * 0047 migration 으로 phone_verified / full_name / nickname / username 4 필드가
+ * raw_app_meta_data 에 캐싱됨. 이 함수는 그 값을 안전하게 (타입 검증) 꺼내서
+ * CurrentUser['profile'] 형태로 반환.
+ *
+ * 반환 null = 오래된 pre-backfill 토큰 → 호출자가 DB fallback 수행.
+ *
+ * phone, marketing_opt_in 은 JWT 에 없는 DB 전용 필드 — 페이지가 필요 시 별도 조회.
+ */
+export function profileFromClaims(
+  userId: string,
+  email: string | null,
+  appMeta: Record<string, unknown> | undefined,
+): CurrentUser['profile'] | null {
+  if (!appMeta || appMeta['phone_verified'] === undefined) return null;
+  // 타입 가드: 악의적으로 string "true" / 숫자 / object 가 와도 안전한 기본값.
+  const phoneVerified = appMeta['phone_verified'] === true;
+  const fullName = typeof appMeta['full_name'] === 'string' ? (appMeta['full_name'] as string) : '';
+  const nickname = typeof appMeta['nickname'] === 'string' ? (appMeta['nickname'] as string) : null;
+  const username = typeof appMeta['username'] === 'string' ? (appMeta['username'] as string) : null;
+  return {
+    id: userId,
+    email,
+    username,
+    phone: null, // JWT 미포함 — /account/profile, /account/verification 에서 별도 조회
+    phone_verified: phoneVerified,
+    full_name: fullName,
+    nickname,
+    marketing_opt_in: false, // JWT 미포함 — /account/profile 에서 별도 조회
+  };
+}
+
+/**
  * 현재 요청의 로그인 사용자 + 프로필 + 역할.
  *
  * `React.cache` 로 per-request memoize — 한 render 안에서 여러 번 호출돼도
@@ -54,27 +88,38 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     const userId = typeof claims.sub === 'string' ? claims.sub : null;
     if (!userId) return null;
 
-    const { data: profile } = await supabase
-      .from('users')
-      .select('id,email,username,phone,phone_verified,full_name,nickname,marketing_opt_in')
-      .eq('id', userId)
-      .maybeSingle<CurrentUser['profile']>();
+    const appMeta = (claims as { app_metadata?: User['app_metadata'] }).app_metadata ?? {};
+    const userMeta = (claims as { user_metadata?: User['user_metadata'] }).user_metadata ?? {};
+    const emailFromClaims =
+      typeof (claims as { email?: unknown }).email === 'string'
+        ? ((claims as { email: string }).email as string)
+        : null;
+
+    // 0047 migration 이후: JWT 에서 직접 phone_verified/full_name/nickname/username 복원.
+    // pre-backfill 토큰이면 null → DB fallback.
+    let profile = profileFromClaims(userId, emailFromClaims, appMeta);
+    if (!profile) {
+      const { data: dbProfile } = await supabase
+        .from('users')
+        .select('id,email,username,phone,phone_verified,full_name,nickname,marketing_opt_in')
+        .eq('id', userId)
+        .maybeSingle<CurrentUser['profile']>();
+      profile = dbProfile ?? null;
+    }
 
     // CurrentUser.auth 는 호환을 위해 User 모양으로 채워두지만 실제 사용처에선
     // id / email / app_metadata 정도만 본다. 나머지 필드는 빈 값.
-    const appMeta = (claims as { app_metadata?: User['app_metadata'] }).app_metadata ?? {};
-    const userMeta = (claims as { user_metadata?: User['user_metadata'] }).user_metadata ?? {};
     const auth = {
       id: userId,
       app_metadata: appMeta,
       user_metadata: userMeta,
       aud: 'authenticated',
       created_at: '',
-      email: profile?.email ?? undefined,
+      email: profile?.email ?? emailFromClaims ?? undefined,
     } as unknown as User;
 
     const roles = extractRoles(appMeta);
-    return { auth, profile: profile ?? null, roles };
+    return { auth, profile, roles };
   } catch (e) {
     // Supabase 가 stale refresh token / 429 rate limit / 네트워크 에러 등으로
     // throw 하는 모든 케이스를 unauthenticated 로 정상화. 보호 라우트는
