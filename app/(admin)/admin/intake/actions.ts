@@ -100,6 +100,10 @@ export async function markPreVerifiedReceivedAction(formData: FormData) {
     }
 
     revalidatePath('/admin/intake');
+    // 상태 전이는 판매자/구매자 페이지에 즉시 반영돼야 함 (account 헤더의 카운트 포함)
+    revalidatePath('/sell/listings');
+    revalidatePath('/buy/orders');
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }
@@ -163,6 +167,10 @@ export async function markReceivedAction(formData: FormData) {
     }
 
     revalidatePath('/admin/intake');
+    // 상태 전이는 판매자/구매자 페이지에 즉시 반영돼야 함 (account 헤더의 카운트 포함)
+    revalidatePath('/sell/listings');
+    revalidatePath('/buy/orders');
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }
@@ -226,6 +234,10 @@ export async function markVerifiedAction(formData: FormData) {
     });
 
     revalidatePath('/admin/intake');
+    // 상태 전이는 판매자/구매자 페이지에 즉시 반영돼야 함 (account 헤더의 카운트 포함)
+    revalidatePath('/sell/listings');
+    revalidatePath('/buy/orders');
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }
@@ -310,6 +322,10 @@ export async function markShippedNotifyAction(formData: FormData) {
     }
 
     revalidatePath('/admin/intake');
+    // 상태 전이는 판매자/구매자 페이지에 즉시 반영돼야 함 (account 헤더의 카운트 포함)
+    revalidatePath('/sell/listings');
+    revalidatePath('/buy/orders');
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }
@@ -351,6 +367,10 @@ export async function adminForceCompleteAction(formData: FormData) {
     }
 
     revalidatePath('/admin/intake');
+    // 상태 전이는 판매자/구매자 페이지에 즉시 반영돼야 함 (account 헤더의 카운트 포함)
+    revalidatePath('/sell/listings');
+    revalidatePath('/buy/orders');
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }
@@ -387,6 +407,10 @@ export async function adminCancelAction(formData: FormData) {
     });
 
     revalidatePath('/admin/intake');
+    // 상태 전이는 판매자/구매자 페이지에 즉시 반영돼야 함 (account 헤더의 카운트 포함)
+    revalidatePath('/sell/listings');
+    revalidatePath('/buy/orders');
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }

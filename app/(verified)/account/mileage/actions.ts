@@ -124,6 +124,8 @@ export async function withdrawRequestAction(formData: FormData): Promise<never> 
 
     revalidatePath('/account/mileage');
     revalidatePath('/admin/mileage');
+    // 출금 신청은 cash_balance hold → /account 페이지 hero 의 마일리지 표시 무효화 필요.
+    revalidatePath('/account');
     return { ok: true };
   });
 

@@ -106,6 +106,8 @@ export async function adminConfirmChargeAction(formData: FormData) {
 
     revalidatePath('/admin/mileage');
     revalidatePath('/account/mileage');
+    // /account 페이지 hero 의 마일리지 잔액도 캐시 무효화
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }
@@ -168,6 +170,8 @@ export async function adminRejectChargeAction(formData: FormData) {
 
     revalidatePath('/admin/mileage');
     revalidatePath('/account/mileage');
+    // /account 페이지 hero 의 마일리지 잔액도 캐시 무효화
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }
@@ -215,6 +219,8 @@ export async function adminResolveWithdrawAction(formData: FormData) {
 
     revalidatePath('/admin/mileage');
     revalidatePath('/account/mileage');
+    // /account 페이지 hero 의 마일리지 잔액도 캐시 무효화
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }

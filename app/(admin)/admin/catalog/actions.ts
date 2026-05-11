@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAuth, requireRole } from '@/lib/auth/guards';
@@ -138,6 +138,8 @@ export async function createSkuAction(formData: FormData) {
     });
 
     revalidatePath('/admin/catalog');
+    // /sell/new 의 unstable_cache 무효화 — 다음 sell/new 진입부터 새 SKU 목록 보임.
+    updateTag('sku-active');
     return sku;
   });
 }
@@ -234,6 +236,8 @@ export async function updateSkuAction(formData: FormData) {
     });
 
     revalidatePath('/admin/catalog');
+    // /sell/new 의 unstable_cache 무효화 — 다음 sell/new 진입부터 새 SKU 목록 보임.
+    updateTag('sku-active');
     return sku;
   });
 }
@@ -281,6 +285,8 @@ export async function toggleSkuActiveAction(formData: FormData) {
     });
 
     revalidatePath('/admin/catalog');
+    // /sell/new 의 unstable_cache 무효화 — 다음 sell/new 진입부터 새 SKU 목록 보임.
+    updateTag('sku-active');
     return sku;
   });
 }
