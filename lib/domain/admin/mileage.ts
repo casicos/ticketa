@@ -18,6 +18,8 @@ export type WithdrawRequestRow = {
   fee: number;
   bank_code: string;
   account_number_last4: string;
+  /** 어드민용 — seller_payout_accounts.account_number_encrypted 를 그대로 decode (MVP 평문). */
+  account_number_full: string | null;
   account_holder: string;
   status: 'requested' | 'processing' | 'completed' | 'rejected';
   requested_at: string;
@@ -56,7 +58,35 @@ export async function fetchOpenWithdraws(): Promise<WithdrawRequestRow[]> {
     .in('status', ['requested', 'processing'])
     .order('requested_at', { ascending: true })
     .limit(50);
-  return (data ?? []) as unknown as WithdrawRequestRow[];
+  const rows = (data ?? []) as unknown as WithdrawRequestRow[];
+  if (rows.length === 0) return rows;
+
+  // 풀 계좌번호 매핑 — seller_payout_accounts.account_number_encrypted (bytea, MVP 평문).
+  // user_id + bank_code + last4 매칭. 활성 계좌(is_active=true) 우선.
+  const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+  const { data: acctData } = await supabase
+    .from('seller_payout_accounts')
+    .select('user_id, bank_code, account_number_last4, account_number_encrypted, is_active')
+    .in('user_id', userIds);
+  const map = new Map<string, string>();
+  for (const a of (acctData ?? []) as {
+    user_id: string;
+    bank_code: string;
+    account_number_last4: string;
+    account_number_encrypted: string; // PostgREST 가 bytea 를 hex 문자열 (\\x...) 로 반환
+    is_active: boolean;
+  }[]) {
+    const key = `${a.user_id}|${a.bank_code}|${a.account_number_last4}`;
+    if (map.has(key) && !a.is_active) continue;
+    // \x303030... 같은 hex 표기를 utf-8 텍스트로 디코드
+    const hex = a.account_number_encrypted.replace(/^\\x/, '');
+    const buf = Buffer.from(hex, 'hex');
+    map.set(key, buf.toString('utf8'));
+  }
+  return rows.map((r) => ({
+    ...r,
+    account_number_full: map.get(`${r.user_id}|${r.bank_code}|${r.account_number_last4}`) ?? null,
+  }));
 }
 
 export type UserBalance = {

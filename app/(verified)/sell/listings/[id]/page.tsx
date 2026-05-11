@@ -120,7 +120,7 @@ export default async function SellListingDetailPage({
   // 판매자에게 사업장 주소 안내. 그 외 케이스는 안내 카드 미노출.
   const preSendPending =
     listing.pre_verified && listing.status === 'submitted' && listing.verified_at === null;
-  const businessAddress = preSendPending ? await fetchBusinessAddress(supabase) : null;
+  const businessAddress = preSendPending ? await fetchBusinessAddress() : null;
 
   const timestamps = {
     submittedAt: listing.submitted_at,

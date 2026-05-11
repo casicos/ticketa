@@ -1,5 +1,8 @@
 import Link from 'next/link';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+// admin client — cross-user 조인을 위해 RLS 우회 필요. /admin/** 는 proxy.ts 가 admin role 가드.
+// (boundaries 룰 패턴 'app/(admin)/**' 매칭이 일부 경우에 'app' 으로 떨어져 한 줄 disable)
+// eslint-disable-next-line boundaries/dependencies
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { AdminPageHead } from '@/components/admin/admin-shell';
 import { shortId, formatDenominationLabel } from '@/lib/format';
 import { DashboardRefreshButton } from './dashboard-refresh-button';
@@ -170,6 +173,7 @@ type CancellationMini = {
     full_name: string | null;
     username: string | null;
     store_name: string | null;
+    email: string | null;
   } | null;
 };
 
@@ -178,7 +182,16 @@ type ChargeMini = {
   amount: number;
   requested_at: string;
   depositor_name: string | null;
-  user: { full_name: string | null; username: string | null } | null;
+  user: { full_name: string | null; username: string | null; email: string | null } | null;
+};
+
+type WithdrawMini = {
+  id: number;
+  amount: number;
+  requested_at: string;
+  account_holder: string;
+  bank_code: string;
+  user: { full_name: string | null; username: string | null; email: string | null } | null;
 };
 
 type InventoryMini = {
@@ -216,8 +229,25 @@ function brandShortLabel(brand: string | null | undefined): string {
   return brand.replace(/백화점$/, '').trim() || brand;
 }
 
+/** 사용자 라벨 fallback — full_name → @username → email → 미상.
+ *  어드민 대시보드는 RLS 우회로 user 조인이 살아있으니 '익명' 은 거의 없어야 함. */
+function userLabel(u: {
+  full_name: string | null;
+  username: string | null;
+  email?: string | null;
+  store_name?: string | null;
+}): string {
+  if (u.store_name) return u.store_name;
+  if (u.full_name) return u.full_name;
+  if (u.username) return `@${u.username}`;
+  if (u.email) return u.email;
+  return '미상';
+}
+
 async function loadDashboard() {
-  const supabase = await createSupabaseServerClient();
+  // admin client — users RLS 우회 필요 (cross-user 프로필 조인).
+  // proxy.ts 가 이미 admin role 가드.
+  const supabase = createSupabaseAdminClient();
   const now = Date.now();
   const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
   const todayStart = new Date();
@@ -233,6 +263,7 @@ async function loadDashboard() {
     inspectRows,
     cancelRows,
     chargeRows,
+    withdrawRows,
     inventoryRows,
     stuckPurchaseRows,
     auditRows,
@@ -264,15 +295,23 @@ async function loadDashboard() {
     supabase
       .from('cancellation_requests')
       .select(
-        'id, requested_at, role_at_request, requester:requested_by(full_name, username, store_name)',
+        'id, requested_at, role_at_request, requester:requested_by(full_name, username, store_name, email)',
       )
       .eq('status', 'pending')
       .order('requested_at', { ascending: true })
       .limit(20),
     supabase
       .from('charge_requests')
-      .select('id, amount, requested_at, depositor_name, user:user_id(full_name, username)')
+      .select('id, amount, requested_at, depositor_name, user:user_id(full_name, username, email)')
       .eq('status', 'pending')
+      .order('requested_at', { ascending: true })
+      .limit(20),
+    supabase
+      .from('withdraw_requests')
+      .select(
+        'id, amount, requested_at, account_holder, bank_code, user:user_id(full_name, username, email)',
+      )
+      .in('status', ['requested', 'processing'])
       .order('requested_at', { ascending: true })
       .limit(20),
     supabase
@@ -314,6 +353,7 @@ async function loadDashboard() {
     inspectRows: (inspectRows.data ?? []) as unknown as ListingMini[],
     cancelRows: (cancelRows.data ?? []) as unknown as CancellationMini[],
     chargeRows: (chargeRows.data ?? []) as unknown as ChargeMini[],
+    withdrawRows: (withdrawRows.data ?? []) as unknown as WithdrawMini[],
     inventoryRows: (inventoryRows.data ?? []) as unknown as InventoryMini[],
     stuckPurchaseRows: (stuckPurchaseRows.data ?? []) as unknown as ListingMini[],
     auditRows: (auditRows.data ?? []) as unknown as AuditMini[],
@@ -428,8 +468,7 @@ export default async function AdminDashboardPage() {
 
   const cancelItems: QueueItem[] = data.cancelRows.slice(0, 3).map((c) => {
     const hrs = hoursAgo(c.requested_at);
-    const name =
-      c.requester?.store_name || c.requester?.full_name || c.requester?.username || '익명';
+    const name = c.requester ? userLabel(c.requester) : '미상';
     return {
       label: `CN-${c.id.toString().padStart(5, '0')} · ${name} / ${c.role_at_request === 'buyer' ? '구매자' : '판매자'} 요청`,
       meta: hrs >= 24 ? `${Math.floor(hrs)}시간 초과` : `${Math.floor(hrs)}시간`,
@@ -439,7 +478,7 @@ export default async function AdminDashboardPage() {
 
   const chargeItems: QueueItem[] = data.chargeRows.slice(0, 3).map((c) => {
     const hrs = hoursAgo(c.requested_at);
-    const name = c.user?.full_name || c.user?.username || '익명';
+    const name = c.user ? userLabel(c.user) : (c.depositor_name ?? '미상');
     const mismatch = c.depositor_name && c.user?.full_name && c.depositor_name !== c.user.full_name;
     const big = c.amount >= 2_000_000;
     return {
@@ -450,6 +489,16 @@ export default async function AdminDashboardPage() {
           : `${name} · ${c.amount.toLocaleString('ko-KR')}원`,
       meta: hrs >= 12 ? `${Math.floor(hrs)}시간` : `${Math.max(1, Math.floor(hrs * 60))}분`,
       hot: !!(mismatch || big),
+    };
+  });
+
+  const withdrawItems: QueueItem[] = data.withdrawRows.slice(0, 3).map((w) => {
+    const hrs = hoursAgo(w.requested_at);
+    const name = w.user ? userLabel(w.user) : (w.account_holder ?? '미상');
+    return {
+      label: `${name} · ${w.amount.toLocaleString('ko-KR')}원`,
+      meta: hrs >= 12 ? `${Math.floor(hrs)}시간` : `${Math.max(1, Math.floor(hrs * 60))}분`,
+      hot: hrs >= 24,
     };
   });
 
@@ -575,6 +624,16 @@ export default async function AdminDashboardPage() {
           href="/admin/mileage?tab=charge"
           hrefLabel="마일리지 메뉴에서"
           items={chargeItems}
+        />
+        <QueueCard
+          title="출금 신청"
+          sub="실계좌 송금 후 처리 완료"
+          count={data.withdrawRows.length}
+          breaches={data.withdrawRows.filter((w) => hoursAgo(w.requested_at) >= 24).length}
+          accent={ACCENT_GOLD}
+          href="/admin/mileage?tab=withdraw"
+          hrefLabel="마일리지 메뉴에서"
+          items={withdrawItems}
         />
         <QueueCard
           title="위탁 입고"

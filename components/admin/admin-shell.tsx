@@ -242,7 +242,7 @@ export function AdminShell({
           className="px-5 pt-6 pb-[18px]"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
         >
-          <Link href={role === 'agent' ? '/agent' : '/admin'} aria-label="Console 홈">
+          <Link href="/account" aria-label="마이룸으로">
             <LogoLockup symbolSize={26} wordmarkHeight={16} color="#fff" />
           </Link>
           <div className="mt-2 flex items-center gap-1.5">

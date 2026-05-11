@@ -83,7 +83,7 @@ export default async function MileageHubPage({
       .eq('user_id', current.auth.id)
       .order('requested_at', { ascending: false })
       .limit(10),
-    fetchBankInfo(supabase),
+    fetchBankInfo(),
   ]);
 
   const rawLedger = (ledgerResult.data ?? []) as LedgerRow[];

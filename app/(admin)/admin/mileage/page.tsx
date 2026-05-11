@@ -217,9 +217,10 @@ function WithdrawTab({ rows }: { rows: WithdrawRow[] }) {
                 </td>
                 <td className="px-4 py-3.5 text-[14px]">
                   <div className="font-bold">{bankNameByCode(r.bank_code)}</div>
-                  <div className="text-muted-foreground font-mono text-[13px]">
-                    {r.account_holder} · ****{r.account_number_last4}
+                  <div className="text-foreground font-mono text-[14px] font-extrabold tabular-nums">
+                    {r.account_number_full ?? `****${r.account_number_last4}`}
                   </div>
+                  <div className="text-muted-foreground text-[12px]">예금주 {r.account_holder}</div>
                 </td>
                 <td className="text-muted-foreground px-4 py-3.5 text-[13px] tabular-nums">
                   {formatTime(r.requested_at)}

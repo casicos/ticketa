@@ -51,7 +51,7 @@ export default async function WithdrawPage({
       .eq('user_id', current.auth.id)
       .eq('is_active', true)
       .order('created_at', { ascending: true }),
-    fetchWithdrawFee(supabase),
+    fetchWithdrawFee(),
     supabase
       .from('withdraw_requests')
       .select(
