@@ -37,13 +37,16 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // auth.getUser 는 stale refresh token / rate limit (429) 등으로 throw 할 수
-  // 있다. 보호 라우트에서 그러한 에러는 모두 미로그인으로 정상화 → /login 으로
-  // 보낸다 (사용자가 다시 로그인하면 stale 쿠키도 자연 해소).
-  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>['data']['user'] = null;
+  // 미들웨어는 경로 게이트 용도. JWT 는 Supabase 서버가 서명 — 위조 불가.
+  // getUser() 는 매 요청마다 /auth/v1/user 로 HTTP 콜 (500ms–1s) 을 때리는 반면
+  // getSession() 은 쿠키만 디코드 (수 ms). 토큰 만료 시 자동 refresh.
+  // 실제 데이터 접근 시점에 supabase 가 다시 토큰을 검증하므로 보안상 충분.
+  let user:
+    | NonNullable<Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']>['user']
+    | null = null;
   try {
-    const { data, error } = await supabase.auth.getUser();
-    if (!error) user = data.user;
+    const { data, error } = await supabase.auth.getSession();
+    if (!error) user = data.session?.user ?? null;
   } catch (e) {
     if (!isSupabaseAuthError(e)) throw e;
   }
