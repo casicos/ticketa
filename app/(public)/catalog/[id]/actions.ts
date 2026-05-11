@@ -69,6 +69,8 @@ export async function purchaseListingAction(formData: FormData) {
     revalidatePath('/catalog');
     revalidatePath('/buy/orders');
     revalidatePath('/sell/listings');
+    revalidatePath('/account');
+    revalidatePath('/account/mileage');
     // rpc.listing_id 는 분할된 자식 listing id (구매자의 주문 단위)
     return { action: 'purchased' as const, listing_id: rpc.listing_id };
   });
@@ -126,6 +128,7 @@ export async function sendGiftFromListingAction(formData: FormData) {
     revalidatePath(`/catalog/${parsed.data.listing_id}`);
     revalidatePath('/account/gift');
     revalidatePath('/account/mileage');
+    revalidatePath('/account');
     return { ok: true as const, gift_id: giftId };
   });
 }

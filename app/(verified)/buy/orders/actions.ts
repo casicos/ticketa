@@ -62,6 +62,7 @@ export async function acceptListingAction(formData: FormData) {
 
     revalidatePath(`/buy/orders/${listing_id}`);
     revalidatePath('/buy/orders');
+    revalidatePath('/account');
     return { ok: true as const };
   });
 }

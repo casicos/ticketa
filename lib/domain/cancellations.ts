@@ -7,6 +7,7 @@
  * ssr 서버 클라이언트(auth.uid() 가 있는 상태)만 사용한다. RLS `cxr_self_insert` 가
  * requested_by = auth.uid() 를 강제하므로 조작 불가.
  */
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requirePhoneVerified } from '@/lib/auth/guards';
@@ -136,6 +137,8 @@ export async function submitCancellationRequestAction(input: SubmitCancellationR
       body: `${role_at_request === 'seller' ? '판매자' : '구매자'}가 매물 취소를 요청했습니다.`,
       linkTo: '/admin/cancellations',
     });
+
+    revalidatePath('/admin/cancellations');
 
     return { request_id: inserted.id as number };
   });

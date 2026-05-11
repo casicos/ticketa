@@ -81,7 +81,8 @@ export default async function SellListingDetailPage({
 }) {
   const { id } = await params;
 
-  const current = await getCurrentUser();
+  // Phase 1: 인증 + supabase 클라이언트 병렬 확보 (서로 독립)
+  const [current, supabase] = await Promise.all([getCurrentUser(), createSupabaseServerClient()]);
   if (!current) {
     redirect(`/login?next=${encodeURIComponent(`/sell/listings/${id}`)}`);
   }
@@ -89,27 +90,28 @@ export default async function SellListingDetailPage({
     redirect(`/verify-phone?next=${encodeURIComponent(`/sell/listings/${id}`)}`);
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from('listing')
-    .select(
-      'id, status, seller_id, quantity_offered, quantity_remaining, unit_price, gross_amount, commission_total, seller_net_amount, submitted_at, purchased_at, handed_over_at, received_at, verified_at, shipped_at, completed_at, cancelled_at, cancel_reason, admin_memo, pre_verified, sku:sku_id(brand, denomination, display_name, thumbnail_url)',
-    )
-    .eq('id', id)
-    .eq('seller_id', current.auth.id)
-    .maybeSingle();
+  // Phase 2: listing + cancellation_requests 병렬 조회 (둘 다 id/auth만 의존)
+  const [{ data }, { data: cancelReqRaw }] = await Promise.all([
+    supabase
+      .from('listing')
+      .select(
+        'id, status, seller_id, quantity_offered, quantity_remaining, unit_price, gross_amount, commission_total, seller_net_amount, submitted_at, purchased_at, handed_over_at, received_at, verified_at, shipped_at, completed_at, cancelled_at, cancel_reason, admin_memo, pre_verified, sku:sku_id(brand, denomination, display_name, thumbnail_url)',
+      )
+      .eq('id', id)
+      .eq('seller_id', current.auth.id)
+      .maybeSingle(),
+    supabase
+      .from('cancellation_requests')
+      .select('id, status, reason, requested_at, role_at_request')
+      .eq('listing_id', id)
+      .eq('requested_by', current.auth.id)
+      .eq('role_at_request', 'seller')
+      .order('requested_at', { ascending: false }),
+  ]);
 
   if (!data) notFound();
 
   const listing = data as unknown as ListingRow;
-
-  const { data: cancelReqRaw } = await supabase
-    .from('cancellation_requests')
-    .select('id, status, reason, requested_at, role_at_request')
-    .eq('listing_id', listing.id)
-    .eq('requested_by', current.auth.id)
-    .eq('role_at_request', 'seller')
-    .order('requested_at', { ascending: false });
   const cancellationRequests = (cancelReqRaw ?? []) as CancellationRequestRow[];
   const pendingCancelReq = cancellationRequests.find((r) => r.status === 'pending') ?? null;
 
