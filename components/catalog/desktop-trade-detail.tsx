@@ -36,6 +36,8 @@ export interface DesktopTradeDetailProps {
   partialAllowed: boolean;
   /** 보는 사람이 에이전트면 '매입' 용어, 아니면 '구매' 용어 사용. */
   viewerIsAgent: boolean;
+  /** 본인이 등록한 매물 — 구매/선물 비활성, 안내문(actionSlot)만 노출. */
+  viewerIsOwner?: boolean;
   className?: string;
 }
 
@@ -58,6 +60,7 @@ export function DesktopTradeDetail({
   storeName,
   partialAllowed,
   viewerIsAgent,
+  viewerIsOwner,
   className,
 }: DesktopTradeDetailProps) {
   const verb = viewerIsAgent ? '매입' : '구매';
@@ -196,7 +199,7 @@ export function DesktopTradeDetail({
         <div>
           <div className="surface-card sticky top-6 p-6">
             <div className="text-muted-foreground mb-3 text-[15px] font-bold">
-              {canBuy ? `${verb} 결제` : '시세 정보'}
+              {viewerIsOwner ? '내 매물' : canBuy ? `${verb} 결제` : '시세 정보'}
             </div>
 
             <div className="border-border flex justify-between border-b border-dashed py-2 text-[15px]">
@@ -222,7 +225,9 @@ export function DesktopTradeDetail({
               </div>
             )}
 
-            {canBuy && balance ? (
+            {viewerIsOwner ? (
+              <div className="mt-4">{actionSlot}</div>
+            ) : canBuy && balance ? (
               <div className="mt-2">
                 <div className="mb-1.5 flex items-center justify-between text-[14px]">
                   <span className="text-muted-foreground">내 마일리지</span>

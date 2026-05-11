@@ -2,11 +2,13 @@ import { AdminPageHead } from '@/components/admin/admin-shell';
 import { R2Pill, R2TabBar, R2TableHead, type R2TabItem } from '@/components/admin/r2';
 import { SkuMark } from '@/components/ticketa/sku-mark';
 import { brandShortLabel } from '@/components/ticketa/dept-mark';
-import { shortId } from '@/lib/format';
+import { shortId, formatDenominationLabel } from '@/lib/format';
 import type { ListingStatus } from '@/lib/domain/listings';
 import {
   fetchAdminIntakeByStatus,
   fetchAdminIntakeCounts,
+  fetchAdminIntakePreSend,
+  fetchAdminIntakePreSendCount,
   type IntakeRow,
 } from '@/lib/domain/admin/intake';
 import {
@@ -15,7 +17,10 @@ import {
   MarkShippedButton,
   ForceCompleteButton,
   AdminCancelButton,
+  MarkPreVerifiedReceivedButton,
 } from './intake-actions';
+
+const PRE_SEND_TAB_ID = 'pre_send';
 
 // NOTE: 일괄 선택 / 일괄 액션 + CSV 내보내기 — 시나리오 미필수, "지원 예정" 라벨링.
 //       단건 transition (수령 / 검수 통과 / 발송 / 수신 확인 / 취소) 으로 운영 가능.
@@ -94,20 +99,34 @@ export default async function AdminIntakePage({
 }) {
   const params = await searchParams;
   const rawTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const tabId = TAB_DEFS.find((t) => t.id === rawTab)?.id ?? 'handed_over';
-  const activeTab = TAB_DEFS.find((t) => t.id === tabId)!;
+  const isPreSendTab = rawTab === PRE_SEND_TAB_ID;
+  const tabId = isPreSendTab
+    ? PRE_SEND_TAB_ID
+    : (TAB_DEFS.find((t) => t.id === rawTab)?.id ?? 'handed_over');
+  const activeTab = isPreSendTab ? null : TAB_DEFS.find((t) => t.id === tabId)!;
 
-  const [tabCounts, rows] = await Promise.all([
+  const [tabCounts, preSendCount, rows] = await Promise.all([
     fetchAdminIntakeCounts(TAB_DEFS.map((t) => t.status)),
-    fetchAdminIntakeByStatus(activeTab.status, activeTab.stageAnchor as string),
+    fetchAdminIntakePreSendCount(),
+    isPreSendTab
+      ? fetchAdminIntakePreSend()
+      : fetchAdminIntakeByStatus(activeTab!.status, activeTab!.stageAnchor as string),
   ]);
 
-  const tabs: R2TabItem[] = TAB_DEFS.map((t, i) => ({
-    id: t.id,
-    label: t.label,
-    count: tabCounts[i],
-    href: `/admin/intake?tab=${t.id}`,
-  }));
+  const tabs: R2TabItem[] = [
+    {
+      id: PRE_SEND_TAB_ID,
+      label: '사전 송부 대기',
+      count: preSendCount,
+      href: `/admin/intake?tab=${PRE_SEND_TAB_ID}`,
+    },
+    ...TAB_DEFS.map((t, i) => ({
+      id: t.id,
+      label: t.label,
+      count: tabCounts[i],
+      href: `/admin/intake?tab=${t.id}`,
+    })),
+  ];
 
   return (
     <>
@@ -146,15 +165,18 @@ export default async function AdminIntakePage({
                   colSpan={7}
                   className="text-muted-foreground px-4 py-12 text-center text-[14px]"
                 >
-                  현재 {activeTab.label} 상태인 매물이 없어요.
+                  현재 {isPreSendTab ? '사전 송부 대기' : activeTab!.label} 매물이 없어요.
                 </td>
               </tr>
             ) : (
               rows.map((r) => {
-                const anchor = r[activeTab.stageAnchor] as string | null;
+                const anchor = isPreSendTab
+                  ? r.submitted_at
+                  : ((r[activeTab!.stageAnchor as keyof IntakeRow] as string | null) ?? null);
+                const slaHours = isPreSendTab ? 48 : activeTab!.slaHours;
                 const hrs = hoursAgo(anchor);
                 const slaH = Math.floor(hrs);
-                const breach = isFinite(activeTab.slaHours) && hrs >= activeTab.slaHours;
+                const breach = isFinite(slaHours) && hrs >= slaHours;
                 const brand = r.sku?.brand ?? '';
                 const face = r.sku?.denomination ?? 0;
                 const isAgent = !!r.seller?.store_name;
@@ -180,8 +202,7 @@ export default async function AdminIntakePage({
                         />
                         <div>
                           <div className="text-[14px] font-bold tracking-[-0.008em]">
-                            {brandShortLabel(brand)} {(face / 10000).toLocaleString('ko-KR')}
-                            만원권
+                            {brandShortLabel(brand)} {formatDenominationLabel(face)}
                           </div>
                           <div className="text-muted-foreground font-mono text-[12px]">
                             {shortId(r.id)}
@@ -222,7 +243,7 @@ export default async function AdminIntakePage({
                     <td className="px-4 py-3.5">
                       {breach ? (
                         <R2Pill tone="danger">⚠ {slaH}h 초과</R2Pill>
-                      ) : isFinite(activeTab.slaHours) ? (
+                      ) : isFinite(slaHours) ? (
                         <span className="text-muted-foreground text-[14px] font-bold tabular-nums">
                           {slaH}h 경과
                         </span>
@@ -232,15 +253,23 @@ export default async function AdminIntakePage({
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <div className="inline-flex flex-wrap justify-end gap-1.5">
-                        {r.status === 'handed_over' && <MarkReceivedButton listingId={r.id} />}
-                        {r.status === 'received' && <MarkVerifiedButton listingId={r.id} />}
-                        {r.status === 'verified' && <MarkShippedButton listingId={r.id} />}
-                        {r.status === 'shipped' && (
+                        {isPreSendTab && <MarkPreVerifiedReceivedButton listingId={r.id} />}
+                        {!isPreSendTab && r.status === 'handed_over' && (
+                          <MarkReceivedButton listingId={r.id} />
+                        )}
+                        {!isPreSendTab && r.status === 'received' && (
+                          <MarkVerifiedButton listingId={r.id} />
+                        )}
+                        {!isPreSendTab && r.status === 'verified' && (
+                          <MarkShippedButton listingId={r.id} />
+                        )}
+                        {!isPreSendTab && r.status === 'shipped' && (
                           <ForceCompleteButton listingId={r.id} shippedAt={r.shipped_at} />
                         )}
-                        {(r.status === 'handed_over' ||
-                          r.status === 'received' ||
-                          r.status === 'verified') && <AdminCancelButton listingId={r.id} />}
+                        {!isPreSendTab &&
+                          (r.status === 'handed_over' ||
+                            r.status === 'received' ||
+                            r.status === 'verified') && <AdminCancelButton listingId={r.id} />}
                       </div>
                     </td>
                   </tr>
@@ -250,17 +279,26 @@ export default async function AdminIntakePage({
           </tbody>
         </table>
         <div className="border-warm-100 bg-warm-50 text-muted-foreground border-t px-4 py-3 text-[13px] tabular-nums">
-          {rows.length === 0
-            ? '— 건'
-            : `1–${rows.length} / ${tabCounts[TAB_DEFS.findIndex((t) => t.id === tabId)]}건`}
-          {isFinite(activeTab.slaHours)
-            ? ` · 처리시한 ${activeTab.slaHours}시간 이상 적색 표시`
-            : ''}
+          {(() => {
+            const totalCount = isPreSendTab
+              ? preSendCount
+              : (tabCounts[TAB_DEFS.findIndex((t) => t.id === tabId)] ?? 0);
+            const sla = isPreSendTab ? 48 : activeTab!.slaHours;
+            return (
+              <>
+                {rows.length === 0 ? '— 건' : `1–${rows.length} / ${totalCount}건`}
+                {isFinite(sla) ? ` · 처리시한 ${sla}시간 이상 적색 표시` : ''}
+              </>
+            );
+          })()}
         </div>
       </div>
 
       {/* 단계별 액션 가이드 */}
       <div className="bg-warm-50 text-muted-foreground mt-4 flex flex-wrap gap-4 rounded-[10px] p-3.5 text-[13px]">
+        <span>
+          <b className="text-foreground">사전 송부 대기</b> → 검수 완료 (인증 라벨 활성화)
+        </span>
         <span>
           <b className="text-foreground">인계 대기</b> → 수령 처리
         </span>

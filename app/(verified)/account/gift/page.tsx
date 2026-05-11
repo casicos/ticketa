@@ -41,8 +41,18 @@ type GiftRow = {
     denomination: number;
     display_name: string;
   } | null;
-  sender: { id: string; full_name: string | null; nickname: string | null } | null;
-  recipient: { id: string; full_name: string | null; nickname: string | null } | null;
+  sender: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    nickname: string | null;
+  } | null;
+  recipient: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    nickname: string | null;
+  } | null;
 };
 
 type AddressRow = {
@@ -84,15 +94,35 @@ function formatDate(iso: string | null) {
   });
 }
 
-const GIFT_SELECT = `
-  id, sender_id, recipient_id, recipient_nickname_snapshot,
-  qty, unit_price, total_price, message, status,
-  shipping_carrier, tracking_no,
-  sent_at, claimed_at, shipped_at, completed_at, refunded_at, expires_at,
-  sku:sku_id(id, brand, denomination, display_name),
-  sender:sender_id(id, full_name, nickname),
-  recipient:recipient_id(id, full_name, nickname)
-`;
+type GiftRpcRow = {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  recipient_nickname_snapshot: string;
+  qty: number;
+  unit_price: number;
+  total_price: number;
+  message: string | null;
+  status: GiftRow['status'];
+  shipping_carrier: string | null;
+  tracking_no: string | null;
+  sent_at: string;
+  claimed_at: string | null;
+  shipped_at: string | null;
+  completed_at: string | null;
+  refunded_at: string | null;
+  expires_at: string;
+  sku_id: string | null;
+  sku_brand: string | null;
+  sku_denomination: number | null;
+  sku_display_name: string | null;
+  sender_full_name: string | null;
+  sender_username: string | null;
+  sender_nickname: string | null;
+  recipient_full_name: string | null;
+  recipient_username: string | null;
+  recipient_nickname: string | null;
+};
 
 export default async function GiftPage({
   searchParams,
@@ -108,19 +138,8 @@ export default async function GiftPage({
 
   const supabase = await createSupabaseServerClient();
 
-  const giftQuery = supabase
-    .from('gifts')
-    .select(GIFT_SELECT)
-    .order('sent_at', { ascending: false })
-    .limit(40);
-
-  const filteredQuery =
-    tab === 'inbox'
-      ? giftQuery.eq('recipient_id', current.auth.id)
-      : giftQuery.eq('sender_id', current.auth.id);
-
   const [giftsRes, addressesRes] = await Promise.all([
-    filteredQuery,
+    supabase.rpc('get_user_gifts', { p_tab: tab }),
     supabase
       .from('shipping_addresses')
       .select(
@@ -131,7 +150,46 @@ export default async function GiftPage({
       .order('created_at', { ascending: false }),
   ]);
 
-  const rows = (giftsRes.data ?? []) as unknown as GiftRow[];
+  const rpcRows = (giftsRes.data ?? []) as GiftRpcRow[];
+  const rows: GiftRow[] = rpcRows.map((g) => ({
+    id: g.id,
+    sender_id: g.sender_id,
+    recipient_id: g.recipient_id,
+    recipient_nickname_snapshot: g.recipient_nickname_snapshot,
+    qty: g.qty,
+    unit_price: g.unit_price,
+    total_price: g.total_price,
+    message: g.message,
+    status: g.status,
+    shipping_carrier: g.shipping_carrier,
+    tracking_no: g.tracking_no,
+    sent_at: g.sent_at,
+    claimed_at: g.claimed_at,
+    shipped_at: g.shipped_at,
+    completed_at: g.completed_at,
+    refunded_at: g.refunded_at,
+    expires_at: g.expires_at,
+    sku: g.sku_id
+      ? {
+          id: g.sku_id,
+          brand: g.sku_brand ?? '',
+          denomination: g.sku_denomination ?? 0,
+          display_name: g.sku_display_name ?? '',
+        }
+      : null,
+    sender: {
+      id: g.sender_id,
+      full_name: g.sender_full_name,
+      username: g.sender_username,
+      nickname: g.sender_nickname,
+    },
+    recipient: {
+      id: g.recipient_id,
+      full_name: g.recipient_full_name,
+      username: g.recipient_username,
+      nickname: g.recipient_nickname,
+    },
+  }));
   const addresses = (addressesRes.data ?? []) as AddressRow[];
 
   const unclaimedCount = rows.filter((r) => tab === 'inbox' && r.status === 'sent').length;
@@ -181,14 +239,24 @@ export default async function GiftPage({
           <div className="grid gap-3">
             {rows.map((r) => {
               const brand = r.sku?.brand ?? 'lotte';
-              const meta = STATUS_LABEL[r.status];
+              // outbox 에서는 수령자가 어떻게 받았는지(마일리지 vs 실물) 노출하지 않는다.
+              // 발송자 입장에선 "수령 완료" 한 가지로 통일.
+              const displayStatus =
+                tab === 'outbox' && r.status === 'claimed_mileage' ? 'completed' : r.status;
+              const meta = STATUS_LABEL[displayStatus];
               const skuLabel = r.sku
                 ? `${BRAND_LABEL[brand] ?? brand} ${r.sku.denomination.toLocaleString('ko-KR')}원권`
                 : '알 수 없는 SKU';
+              const senderHandle = r.sender?.username ? `@${r.sender.username}` : null;
+              const recipientHandle = r.recipient?.username
+                ? `@${r.recipient.username}`
+                : r.recipient_nickname_snapshot
+                  ? `@${r.recipient_nickname_snapshot.replace(/^@/, '')}`
+                  : '';
               const counterparty =
                 tab === 'inbox'
-                  ? r.sender?.full_name || r.sender?.nickname || '익명'
-                  : r.recipient_nickname_snapshot;
+                  ? r.sender?.full_name || senderHandle || '익명 사용자'
+                  : r.recipient?.full_name || recipientHandle;
 
               return (
                 <article
@@ -210,10 +278,11 @@ export default async function GiftPage({
                       <div className="text-muted-foreground text-[14px]">
                         {tab === 'inbox' ? 'From' : 'To'}{' '}
                         <span className="text-foreground font-bold">{counterparty}</span>
-                        {tab === 'outbox' && r.recipient?.nickname && (
-                          <span className="ml-1 font-mono text-[13px]">
-                            (@{r.recipient.nickname})
-                          </span>
+                        {tab === 'outbox' && r.recipient?.full_name && recipientHandle && (
+                          <span className="ml-1 font-mono text-[13px]">({recipientHandle})</span>
+                        )}
+                        {tab === 'inbox' && r.sender?.full_name && senderHandle && (
+                          <span className="ml-1 font-mono text-[13px]">({senderHandle})</span>
                         )}
                         <span className="ml-2">· {formatDate(r.sent_at)}</span>
                       </div>

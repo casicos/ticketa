@@ -19,7 +19,9 @@ export default async function SellNewPage() {
 
   const { data: skuRows } = await supabase
     .from('sku')
-    .select('id, brand, denomination, display_name, thumbnail_url, display_order')
+    .select(
+      'id, brand, denomination, display_name, thumbnail_url, display_order, commission_type, commission_amount, commission_charged_to',
+    )
     .eq('is_active', true)
     .order('display_order', { ascending: true })
     .order('brand', { ascending: true })
@@ -31,6 +33,9 @@ export default async function SellNewPage() {
     denomination: r.denomination as number,
     display_name: r.display_name as string,
     thumbnail_url: (r.thumbnail_url as string | null) ?? null,
+    commission_type: (r.commission_type as 'fixed' | 'percent') ?? 'fixed',
+    commission_amount: (r.commission_amount as number) ?? 400,
+    commission_charged_to: (r.commission_charged_to as 'seller' | 'buyer' | 'both') ?? 'seller',
   }));
 
   return (

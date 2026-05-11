@@ -180,7 +180,9 @@ export function MobileBuyOrders({
                 </div>
 
                 <Link
-                  href={`/buy/orders/${r.id}`}
+                  href={
+                    r.id.startsWith('gift:') ? '/account/gift?tab=outbox' : `/buy/orders/${r.id}`
+                  }
                   className={cn(
                     'flex h-[38px] w-full items-center justify-center rounded-lg text-[14px] font-bold transition-colors',
                     r.status === 'completed'
@@ -188,7 +190,7 @@ export function MobileBuyOrders({
                       : 'bg-ticketa-blue-500 text-white',
                   )}
                 >
-                  상세 보기
+                  {r.id.startsWith('gift:') ? '선물 내역' : '상세 보기'}
                 </Link>
               </div>
             );

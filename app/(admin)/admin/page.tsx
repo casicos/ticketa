@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AdminPageHead } from '@/components/admin/admin-shell';
-import { shortId } from '@/lib/format';
+import { shortId, formatDenominationLabel } from '@/lib/format';
 import { DashboardRefreshButton } from './dashboard-refresh-button';
 
 const ACCENT_BLUE = 'var(--ticketa-blue-500)';
@@ -419,7 +419,7 @@ export default async function AdminDashboardPage() {
     const hrs = anchor ? hoursAgo(anchor) : 0;
     const sku = r.sku;
     return {
-      label: `${shortId(r.id)} · ${brandShortLabel(sku?.brand)} ${((sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 × ${r.quantity_offered}`,
+      label: `${shortId(r.id)} · ${brandShortLabel(sku?.brand)} ${formatDenominationLabel(sku?.denomination ?? 0)} × ${r.quantity_offered}`,
       meta: anchor ? (hrs >= 24 ? `${Math.floor(hrs)}시간 초과` : `${Math.floor(hrs)}시간`) : '—',
       mono: true,
       hot: hrs >= 24,
@@ -454,7 +454,7 @@ export default async function AdminDashboardPage() {
   });
 
   const inventoryItems: QueueItem[] = data.inventoryRows.slice(0, 3).map((i) => ({
-    label: `${i.agent?.store_name || i.agent?.username || '에이전트'} · ${brandShortLabel(i.sku?.brand)} ${((i.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 × ${i.qty_available}`,
+    label: `${i.agent?.store_name || i.agent?.username || '에이전트'} · ${brandShortLabel(i.sku?.brand)} ${formatDenominationLabel(i.sku?.denomination ?? 0)} × ${i.qty_available}`,
     meta: formatStuck(hoursAgo(i.created_at)) + ' 전',
   }));
 

@@ -44,6 +44,22 @@ export async function submitListingAction(formData: FormData) {
 
     const input = parsed.data;
 
+    // 액면가 가드 — 클라이언트 우회/직접 호출 대비. unit_price ≤ denomination.
+    const { data: skuRow } = await supabase
+      .from('sku')
+      .select('id, denomination, is_active')
+      .eq('id', input.sku_id)
+      .maybeSingle<{ id: string; denomination: number; is_active: boolean }>();
+    if (!skuRow || !skuRow.is_active) {
+      throwCoded('선택한 상품권을 찾을 수 없습니다', 'SKU_NOT_FOUND');
+    }
+    if (input.unit_price > skuRow.denomination) {
+      throwCoded(
+        `장당 판매가는 액면가(${skuRow.denomination.toLocaleString('ko-KR')}원) 이하여야 합니다`,
+        'PRICE_OVER_FACE',
+      );
+    }
+
     // seller role 자동 부여 (idempotent — 이미 활성이면 unique index 로 insert 실패 → 무시)
     await supabase
       .from('user_roles')

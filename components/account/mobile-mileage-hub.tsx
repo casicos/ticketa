@@ -7,6 +7,7 @@ type LedgerRow = {
   amount: number;
   memo: string | null;
   created_at: string;
+  sku_label?: string | null;
 };
 
 type Props = {
@@ -191,7 +192,7 @@ export function MobileMileageHub({ total, withdrawable, inFlightWithdraw, ledger
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-bold">
-                      {formatLedgerMemo(r.memo, r.type)}
+                      {formatLedgerMemo(r.memo, r.type, r.sku_label)}
                     </div>
                     <div className="text-muted-foreground font-mono text-xs">
                       {new Date(r.created_at).toLocaleDateString('ko-KR')}

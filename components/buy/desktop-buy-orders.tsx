@@ -173,19 +173,17 @@ export function DesktopBuyOrders({
                     key={tab.key}
                     href={href}
                     className={cn(
-                      'mb-[-1px] flex items-center gap-1.5 px-[18px] py-2.5 text-[15px] font-bold transition-colors',
+                      'mb-[-1px] flex min-w-[68px] flex-col items-center gap-0.5 px-3 py-2 text-[14px] font-bold transition-colors',
                       isActive
                         ? 'border-ticketa-blue-500 text-foreground border-b-2'
                         : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    {tab.label}
+                    <span className="leading-none">{tab.label}</span>
                     <span
                       className={cn(
-                        'rounded-full px-1.5 py-0.5 text-[13px] font-bold tabular-nums',
-                        isActive
-                          ? 'bg-ticketa-blue-500/15 text-ticketa-blue-700'
-                          : 'bg-muted text-muted-foreground',
+                        'text-[12px] leading-none font-bold tabular-nums',
+                        isActive ? 'text-ticketa-blue-700' : 'text-muted-foreground/70',
                       )}
                     >
                       {count}
@@ -271,7 +269,11 @@ export function DesktopBuyOrders({
                     </div>
                     <div>
                       <Link
-                        href={`/buy/orders/${r.id}`}
+                        href={
+                          r.id.startsWith('gift:')
+                            ? '/account/gift?tab=outbox'
+                            : `/buy/orders/${r.id}`
+                        }
                         className={cn(
                           'flex h-9 items-center rounded-lg px-3.5 text-[15px] font-bold transition-colors',
                           r.status === 'completed'
@@ -279,7 +281,7 @@ export function DesktopBuyOrders({
                             : 'bg-ticketa-blue-500 text-white',
                         )}
                       >
-                        {r.status === 'completed' ? '상세 보기' : '상세 보기'}
+                        {r.id.startsWith('gift:') ? '선물 내역' : '상세 보기'}
                       </Link>
                     </div>
                   </div>

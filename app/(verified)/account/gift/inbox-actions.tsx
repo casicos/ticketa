@@ -154,7 +154,7 @@ function MileageClaimDialog({
             +{totalPrice.toLocaleString('ko-KR')}원
           </div>
           <div className="text-muted-foreground mt-1.5 text-[13px]">
-            cash 잔액으로 적립 · 즉시 출금 가능
+            마일리지로 적립 · 즉시 출금 가능
           </div>
         </div>
         <p className="text-muted-foreground text-[13px]">

@@ -5,6 +5,7 @@ import { AdminPageHead, AdminKpi } from '@/components/admin/admin-shell';
 import { R2Pill, R2TableHead } from '@/components/admin/r2';
 import { DeptMark, type Department } from '@/components/ticketa/dept-mark';
 import { fetchConsignmentData } from '@/lib/domain/admin/consignments';
+import { formatDenominationLabel } from '@/lib/format';
 import {
   ConsignmentForm,
   type AgentOption,
@@ -268,7 +269,7 @@ export default async function AdminConsignmentsPage() {
                         ) : null}
                         <span className="text-[14px] font-bold">
                           {shortBrandLabel(skuBrand)}{' '}
-                          {((r.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권
+                          {formatDenominationLabel(r.sku?.denomination ?? 0)}
                         </span>
                       </div>
                     </td>
@@ -298,13 +299,13 @@ export default async function AdminConsignmentsPage() {
                           currentUnitCost={r.unit_cost}
                           qtyReserved={r.qty_reserved}
                           agentName={agentName}
-                          skuLabel={`${shortBrandLabel(skuBrand)} ${((r.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권`}
+                          skuLabel={`${shortBrandLabel(skuBrand)} ${formatDenominationLabel(r.sku?.denomination ?? 0)}`}
                         />
                         <ReleaseConsignmentButton
                           inventoryId={r.id}
                           qtyAvailable={r.qty_available}
                           agentName={agentName}
-                          skuLabel={`${shortBrandLabel(skuBrand)} ${((r.sku?.denomination ?? 0) / 10000).toLocaleString('ko-KR')}만원권 · 정산 단가 ${r.unit_cost.toLocaleString('ko-KR')}원`}
+                          skuLabel={`${shortBrandLabel(skuBrand)} ${formatDenominationLabel(r.sku?.denomination ?? 0)} · 정산 단가 ${r.unit_cost.toLocaleString('ko-KR')}원`}
                         />
                       </div>
                     </td>

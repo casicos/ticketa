@@ -24,6 +24,8 @@ export interface MobileTradeDetailProps {
   storeName?: string | null;
   partialAllowed: boolean;
   viewerIsAgent: boolean;
+  /** 본인이 등록한 매물 — 구매/선물 비활성, 안내문(actionSlot)만 노출. */
+  viewerIsOwner?: boolean;
   className?: string;
 }
 
@@ -44,6 +46,7 @@ export function MobileTradeDetail({
   storeName,
   partialAllowed,
   viewerIsAgent,
+  viewerIsOwner,
   className,
 }: MobileTradeDetailProps) {
   const verb = viewerIsAgent ? '매입' : '구매';
@@ -117,7 +120,9 @@ export function MobileTradeDetail({
             {formatKRW(partialAllowed ? unitPrice : gross)}
           </span>
         </div>
-        {canBuy ? (
+        {viewerIsOwner ? (
+          actionSlot
+        ) : canBuy ? (
           !hasEnough ? (
             <div className="bg-warning/10 rounded-lg p-3 text-[14px]">
               <p className="font-semibold">

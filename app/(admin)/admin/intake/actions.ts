@@ -65,6 +65,46 @@ async function fetchListing(
 }
 
 /**
+ * 사전 송부(pre_verified) 매물의 실물 수령·검수 완료 처리.
+ * status 는 그대로 'submitted' 유지, verified_at + received_at 만 갱신.
+ * mark_listing_pre_verified_received RPC (admin only) 가 알림 + audit 까지 처리.
+ */
+const preVerifiedSchema = z.object({
+  listing_id: z.string().uuid(),
+  memo: z.string().trim().max(200).optional().or(z.literal('')),
+});
+
+export async function markPreVerifiedReceivedAction(formData: FormData) {
+  return withServerAction('markPreVerifiedReceived', async () => {
+    await requireRole('admin');
+
+    const parsed = preVerifiedSchema.safeParse({
+      listing_id: formData.get('listing_id'),
+      memo: (formData.get('memo') ?? '') as string,
+    });
+    if (!parsed.success) {
+      throw Object.assign(new Error('INVALID_INPUT'), { code: 'INVALID_INPUT' });
+    }
+    const { listing_id, memo } = parsed.data;
+    const trimmed = (memo ?? '').trim();
+
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.rpc('mark_listing_pre_verified_received', {
+      p_listing_id: listing_id,
+      p_admin_memo: trimmed.length > 0 ? trimmed : null,
+    });
+    if (error) {
+      throw Object.assign(new Error(error.message || 'RPC_ERROR'), {
+        code: error.code ?? 'RPC_ERROR',
+      });
+    }
+
+    revalidatePath('/admin/intake');
+    return { ok: true as const };
+  });
+}
+
+/**
  * handed_over → received
  * 판매자가 인계 확인한 매물을 중간업체가 실물 수령했음을 기록.
  */

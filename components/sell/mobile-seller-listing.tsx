@@ -4,6 +4,7 @@ import { DeptMark } from '@/components/ticketa/dept-mark';
 import { ListingTimeline } from '@/components/listing-timeline';
 import { formatKRW, formatDateTime } from '@/lib/format';
 import type { ListingStatus } from '@/lib/domain/listings';
+import { PreSendCallout, type PreSendInfo } from './pre-send-callout';
 
 type Timestamps = {
   submittedAt: string;
@@ -32,6 +33,8 @@ type Props = {
   sellerNetAmount: number | null;
   commissionTotal: number | null;
   adminMemo: string | null;
+  preVerified?: boolean;
+  preSendInfo?: PreSendInfo | null;
   timestamps: Timestamps;
   actionsSlot: React.ReactNode;
 };
@@ -51,6 +54,7 @@ export function MobileSellerListing({
   sellerNetAmount,
   commissionTotal,
   adminMemo,
+  preSendInfo,
   timestamps,
   actionsSlot,
 }: Props) {
@@ -128,6 +132,13 @@ export function MobileSellerListing({
           ))}
         </div>
       </div>
+
+      {/* 사전 송부 안내 */}
+      {preSendInfo && (
+        <div className="mx-4 mt-3">
+          <PreSendCallout info={preSendInfo} />
+        </div>
+      )}
 
       {/* Settlement card */}
       {sellerNetAmount !== null && (

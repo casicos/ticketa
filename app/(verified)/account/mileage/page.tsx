@@ -5,6 +5,7 @@ import { fetchMyMileageBalance } from '@/lib/domain/mileage';
 import { fetchBankInfo, type BankInfo } from '@/lib/domain/platform-settings';
 import { bankNameByCode } from '@/lib/domain/banks';
 import { BankMark } from '@/components/ticketa/bank-mark';
+import { brandShortLabel } from '@/components/ticketa/dept-mark';
 import { DesktopMileageHub } from '@/components/account/desktop-mileage-hub';
 import { MobileMileageHub } from '@/components/account/mobile-mileage-hub';
 import { MyRoomShell } from '@/components/account/my-room-shell';
@@ -15,6 +16,8 @@ type LedgerRow = {
   amount: number;
   memo: string | null;
   created_at: string;
+  related_listing_id?: string | null;
+  sku_label?: string | null;
 };
 
 type ChargeReqRow = {
@@ -60,7 +63,7 @@ export default async function MileageHubPage({
     fetchMyMileageBalance(supabase),
     supabase
       .from('mileage_ledger')
-      .select('id, type, amount, memo, created_at')
+      .select('id, type, amount, memo, created_at, related_listing_id')
       .eq('user_id', current.auth.id)
       .order('created_at', { ascending: false })
       .limit(20),
@@ -83,7 +86,32 @@ export default async function MileageHubPage({
     fetchBankInfo(supabase),
   ]);
 
-  const ledger = (ledgerResult.data ?? []) as LedgerRow[];
+  const rawLedger = (ledgerResult.data ?? []) as LedgerRow[];
+
+  // related_listing_id → SKU 라벨 매핑.
+  // RLS: status='submitted' 공개 + buyer_id=auth.uid() 읽기 허용으로 대부분 커버.
+  const listingIds = Array.from(
+    new Set(rawLedger.map((r) => r.related_listing_id).filter((v): v is string => Boolean(v))),
+  );
+  const skuLabelMap = new Map<string, string>();
+  if (listingIds.length > 0) {
+    const { data: listingData } = await supabase
+      .from('listing')
+      .select('id, sku:sku_id(brand, denomination)')
+      .in('id', listingIds);
+    for (const row of (listingData ?? []) as unknown as Array<{
+      id: string;
+      sku: { brand: string; denomination: number } | null;
+    }>) {
+      if (!row.sku) continue;
+      const face = (row.sku.denomination / 10000).toLocaleString('ko-KR');
+      skuLabelMap.set(row.id, `${brandShortLabel(row.sku.brand)} ${face}만원권`);
+    }
+  }
+  const ledger: LedgerRow[] = rawLedger.map((r) => ({
+    ...r,
+    sku_label: r.related_listing_id ? (skuLabelMap.get(r.related_listing_id) ?? null) : null,
+  }));
   const chargeRequests = (chargeReqResult.data ?? []) as ChargeReqRow[];
   const pendingCharges = chargeRequests.filter((c) => c.status === 'pending');
   const withdrawRequests = (withdrawReqResult.data ?? []) as WithdrawReqRow[];

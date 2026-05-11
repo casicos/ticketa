@@ -4,7 +4,6 @@ import { useTransition, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
@@ -22,6 +21,7 @@ import {
   markShippedNotifyAction,
   adminCancelAction,
   adminForceCompleteAction,
+  markPreVerifiedReceivedAction,
 } from './actions';
 import { SHIPPING_CARRIERS } from './data';
 import type { ServerActionResult } from '@/lib/server-actions';
@@ -38,6 +38,65 @@ function handleResult(result: ServerActionResult<unknown>, successMsg: string) {
     };
     toast.error(codeMap[result.code] ?? result.message ?? '오류가 발생했습니다.');
   }
+}
+
+// ------------------------------------------------------------------
+// 사전 송부 검수 완료 (submitted + pre_verified, verified_at 미생성 → verified_at 갱신)
+// ------------------------------------------------------------------
+
+export function MarkPreVerifiedReceivedButton({ listingId }: { listingId: string }) {
+  const [open, setOpen] = useState(false);
+  const [memo, setMemo] = useState('');
+  const [pending, startTransition] = useTransition();
+
+  function confirm() {
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('listing_id', listingId);
+      if (memo.trim()) fd.set('memo', memo.trim());
+      const result = await markPreVerifiedReceivedAction(fd);
+      handleResult(result, '사전 송부 수령·검수 완료로 처리됐어요.');
+      if (result.ok) {
+        setOpen(false);
+        setMemo('');
+      }
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">검수 완료</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>사전 송부 검수 완료</DialogTitle>
+          <DialogDescription>
+            실물 수령 + 진위 확인이 끝났나요? 매물이 카탈로그에서 &quot;인증&quot; 라벨로 노출되고
+            판매자에게 알림이 발송됩니다.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="pre-memo">메모 (선택)</Label>
+          <Textarea
+            id="pre-memo"
+            placeholder="검수 메모, 송장 번호, 상태 등 (200자 이내)"
+            value={memo}
+            onChange={(e) => setMemo(e.target.value.slice(0, 200))}
+            rows={3}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+            취소
+          </Button>
+          <Button onClick={confirm} disabled={pending}>
+            {pending ? '처리 중…' : '확정'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 // ------------------------------------------------------------------

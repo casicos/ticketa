@@ -41,6 +41,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { id: 'catalog', label: '시세·매물', href: '/catalog', match: (p) => p.startsWith('/catalog') },
+  { id: 'sell', label: '판매하기', href: '/sell/new', match: (p) => p.startsWith('/sell') },
   {
     id: 'mileage',
     label: '마일리지',

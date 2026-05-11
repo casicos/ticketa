@@ -150,7 +150,7 @@ function GiftSendDialog({
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 inline-flex size-7 items-center justify-center rounded-full bg-white/10 text-white/80 hover:bg-white/20"
+            className="absolute top-3 right-3 z-10 inline-flex size-7 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
             aria-label="닫기"
           >
             <X className="size-4" strokeWidth={2.25} />
@@ -300,7 +300,7 @@ function GiftSendDialog({
             </div>
             {shortage > 0 && (
               <div className="bg-destructive/15 text-destructive mt-2 rounded-[8px] px-3 py-2 text-[13px] font-bold">
-                cash 잔액이 부족해요 ·{' '}
+                마일리지가 부족해요 ·{' '}
                 <span className="tabular-nums">{shortage.toLocaleString('ko-KR')}원</span> 필요
               </div>
             )}

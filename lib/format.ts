@@ -111,14 +111,46 @@ export function formatKoreanPhone(phone: string | null | undefined): string {
 }
 
 /**
+ * 액면가를 한국식 짧은 단위로 표기.
+ *   5_000      → "5천원"
+ *   10_000     → "1만원"
+ *   30_000     → "3만원"
+ *   500_000    → "50만원"
+ *   100_000_000 → "1억원"
+ * `0.5만원` 같은 소수 표기를 피하고 한 단계 낮은 단위(천원)로 자연스럽게 표시.
+ */
+export function formatDenomination(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return '0원';
+  if (value >= 100_000_000 && value % 100_000_000 === 0) {
+    return `${(value / 100_000_000).toLocaleString('ko-KR')}억원`;
+  }
+  if (value >= 10_000) {
+    return `${(value / 10_000).toLocaleString('ko-KR')}만원`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toLocaleString('ko-KR')}천원`;
+  }
+  return `${value.toLocaleString('ko-KR')}원`;
+}
+
+/** 액면가 + "권" 접미. 예: 5000 → "5천원권", 50000 → "5만원권". */
+export function formatDenominationLabel(value: number): string {
+  return `${formatDenomination(value)}권`;
+}
+
+/**
  * 마일리지 원장 memo 를 일반 사용자에게 보기 좋게 정리.
  *  - ` [cash bucket]` / ` [pg bucket]` 접미사 제거 (DB 내부 분기 표식, bucket 컬럼에 이미 있음)
- *  - `listing=<uuid>` 등 UUID 토큰 제거
- *  - 패턴별로 한국어화: `매입: qty=2` → `매입 2매`, `취소 환불: reason=X` → `취소 환불 — X`
+ *  - `listing=<uuid>` / `(listing=<uuid>)` 등 UUID 토큰과 빈 괄호 제거
+ *  - 패턴별로 한국어화 + skuLabel 이 있으면 어떤 매물인지 같이 표시
+ *      매입       → "매입 2매 · 롯데 5만원권"
+ *      취소 환불  → "취소 환불 · 롯데 5만원권 — 사유"
+ *      선물 발송  → "선물 발송 · 롯데 5만원권 → @tester01"
  */
 export function formatLedgerMemo(
   memo: string | null | undefined,
   fallback?: string | null,
+  skuLabel?: string | null,
 ): string {
   if (!memo || !memo.trim()) return fallback ?? '';
   let s = memo;
@@ -126,28 +158,64 @@ export function formatLedgerMemo(
   // 버킷 접미사 제거
   s = s.replace(/\s*\[(cash|pg) bucket\]\s*/g, '').trim();
 
-  // listing=<uuid> 토큰 제거
+  // (listing=<uuid>) / listing=<uuid> 토큰 제거
+  s = s.replace(/\s*\(\s*listing=[0-9a-f-]{8,}\s*\)/gi, '').trim();
   s = s.replace(/\s*listing=[0-9a-f-]{8,}\b/gi, '').trim();
+  // 빈 괄호 정리
+  s = s.replace(/\s*\(\s*\)\s*/g, ' ').trim();
 
-  // 매입 패턴 정규화
+  const skuSuffix = skuLabel ? ` · ${skuLabel}` : '';
+
+  // 매입 패턴
   const purchaseMatch = s.match(/^매입\s*:?\s*(.*)$/);
   if (purchaseMatch) {
     const tail = purchaseMatch[1] ?? '';
     const qtyMatch = tail.match(/qty=(\d+)/i);
-    if (qtyMatch) {
-      return `매입 ${Number(qtyMatch[1]).toLocaleString('ko-KR')}매`;
-    }
-    if (!tail.trim()) return '매입';
+    const qtyPart = qtyMatch ? ` ${Number(qtyMatch[1]).toLocaleString('ko-KR')}매` : '';
+    return `매입${qtyPart}${skuSuffix}`;
   }
 
-  // 취소 환불 패턴 정규화 — reason= 만 남기고 깔끔하게
+  // 취소 환불 — reason= 만 남기고 SKU + 사유로 분리
   const cancelMatch = s.match(/^취소\s*환불\s*:?\s*(.*)$/);
   if (cancelMatch) {
     const tail = (cancelMatch[1] ?? '').trim();
     const reasonMatch = tail.match(/reason=(.+)$/i);
     const reason = reasonMatch ? reasonMatch[1]!.trim() : tail.replace(/^reason=/i, '').trim();
-    if (reason) return `취소 환불 — ${reason}`;
-    return '취소 환불';
+    return reason ? `취소 환불${skuSuffix} — ${reason}` : `취소 환불${skuSuffix}`;
+  }
+
+  // 선물 발송: "선물 발송 → @aaa" 또는 "선물 발송 (...) → @aaa"
+  const giftSendMatch = s.match(/^선물\s*발송\s*:?\s*(?:[→\-]+\s*)?(@?[A-Za-z0-9_.-]+)?$/);
+  if (giftSendMatch) {
+    const rcpt = (giftSendMatch[1] ?? '').trim();
+    const rcptPart = rcpt ? ` → ${rcpt.startsWith('@') ? rcpt : `@${rcpt}`}` : '';
+    return `선물 발송${skuSuffix}${rcptPart}`;
+  }
+  // "선물 발송 → @aaa" — 화살표를 별도 토큰으로 처리
+  if (/^선물\s*발송/.test(s)) {
+    const arrowMatch = s.match(/(?:→|->)\s*(@?[A-Za-z0-9_.-]+)/);
+    const rcpt = arrowMatch?.[1] ?? '';
+    const rcptPart = rcpt ? ` → ${rcpt.startsWith('@') ? rcpt : `@${rcpt}`}` : '';
+    return `선물 발송${skuSuffix}${rcptPart}`;
+  }
+
+  // 선물 마일리지 수령
+  if (/^선물\s*마일리지\s*수령/.test(s)) {
+    const qtyMatch = s.match(/\((\d+)\s*매\)/);
+    const qtyPart = qtyMatch ? ` ${qtyMatch[1]}매` : '';
+    return `선물 마일리지 수령${qtyPart}${skuSuffix}`;
+  }
+
+  // 선물 정산 / 선물 환불 일반 패턴
+  const giftEtcMatch = s.match(/^(선물\s*\S+)/);
+  if (giftEtcMatch) {
+    return `${giftEtcMatch[1]}${skuSuffix}`;
+  }
+
+  // 정산 패턴
+  const settleMatch = s.match(/^정산\s*:?\s*(.*)$/);
+  if (settleMatch) {
+    return `정산${skuSuffix}`;
   }
 
   // qty=N 단독 잔여 토큰 제거
@@ -155,7 +223,7 @@ export function formatLedgerMemo(
   // 콜론으로 끝나는 경우 정리
   s = s.replace(/[:：]\s*$/g, '').trim();
 
-  return s || (fallback ?? '');
+  return s + skuSuffix || (fallback ?? '');
 }
 
 /** 국내 포맷 + 가운데 4자리 마스킹. 예: `010-****-5678`. */

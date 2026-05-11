@@ -71,10 +71,14 @@ export default async function CatalogListingDetailPage({
   // (예전엔 user_roles 조회했는데 composite PK 라 `id` 컬럼이 없어 항상 null 이 떨어짐 — 가격 표시 버그 원인)
   const isAgentListing = listing.pre_verified;
 
+  // 본인 매물은 프론트에서 미리 차단 — RPC 의 SELF_PURCHASE_FORBIDDEN 까지 가지 않게.
+  const isOwner = !!current && current.auth.id === listing.seller_id;
   // 일반 phone_verified 회원도 직접 구매 가능 (P2P 마켓플레이스 모델).
-  // 본인이 등록한 매물은 RPC 단계에서 SELF_PURCHASE_FORBIDDEN 으로 차단.
-  const canBuy = !!current && (current.profile?.phone_verified ?? false);
-  const balance = current && canBuy ? await fetchMyMileageBalance(supabase) : null;
+  const canBuy = !!current && (current.profile?.phone_verified ?? false) && !isOwner;
+  const balance =
+    current && (current.profile?.phone_verified ?? false)
+      ? await fetchMyMileageBalance(supabase)
+      : null;
   // 보는 사람이 에이전트면 "매입" 용어, 일반 회원이면 "구매" 용어로 표기
   const viewerIsAgent = current?.roles.includes('agent') ?? false;
 
@@ -102,46 +106,64 @@ export default async function CatalogListingDetailPage({
       />
     ) : null;
 
-  const purchaseAction =
-    canBuy && balance && hasEnough ? (
-      <div className="grid gap-2">
-        <PurchaseConfirm
-          listingId={listing.id}
-          unitPrice={listing.unit_price}
-          maxQty={remaining}
-          balanceTotal={balance.total}
-          partialAllowed={isAgentListing}
-          viewerIsAgent={viewerIsAgent}
-        />
-        {giftButton}
+  const ownerHint = isOwner ? (
+    <div className="border-warm-200 bg-warm-50 text-foreground rounded-[10px] border px-3.5 py-3 text-[13px] leading-[1.55]">
+      <div className="text-foreground mb-0.5 font-extrabold">내가 등록한 매물이에요</div>
+      <div className="text-muted-foreground">
+        본인이 올린 매물은 직접 구매하거나 선물할 수 없어요. 매물 상세는{' '}
+        <Link
+          href={`/sell/listings/${listing.id}`}
+          className="text-ticketa-blue-700 font-bold underline-offset-2 hover:underline"
+        >
+          판매 내역
+        </Link>{' '}
+        에서 확인해주세요.
       </div>
-    ) : canBuy && balance && !hasEnough ? (
-      <div className="grid gap-2">
-        <Button asChild size="sm" className="mt-3 w-full">
-          <Link href={`/account/mileage/charge?amount=${shortage}&returnTo=/catalog/${listing.id}`}>
-            마일리지 충전하러 가기
-          </Link>
-        </Button>
-        {giftButton}
-      </div>
-    ) : null;
+    </div>
+  ) : null;
 
-  const mobileActionSlot =
-    canBuy && balance && hasEnough ? (
-      <div className="grid gap-2">
-        <PurchaseConfirm
-          listingId={listing.id}
-          unitPrice={listing.unit_price}
-          maxQty={remaining}
-          balanceTotal={balance.total}
-          partialAllowed={isAgentListing}
-          viewerIsAgent={viewerIsAgent}
-        />
-        {giftButton}
-      </div>
-    ) : (
-      giftButton
-    );
+  const purchaseAction = isOwner ? (
+    ownerHint
+  ) : canBuy && balance && hasEnough ? (
+    <div className="grid gap-2">
+      <PurchaseConfirm
+        listingId={listing.id}
+        unitPrice={listing.unit_price}
+        maxQty={remaining}
+        balanceTotal={balance.total}
+        partialAllowed={isAgentListing}
+        viewerIsAgent={viewerIsAgent}
+      />
+      {giftButton}
+    </div>
+  ) : canBuy && balance && !hasEnough ? (
+    <div className="grid gap-2">
+      <Button asChild size="sm" className="mt-3 w-full">
+        <Link href={`/account/mileage/charge?amount=${shortage}&returnTo=/catalog/${listing.id}`}>
+          마일리지 충전하러 가기
+        </Link>
+      </Button>
+      {giftButton}
+    </div>
+  ) : null;
+
+  const mobileActionSlot = isOwner ? (
+    ownerHint
+  ) : canBuy && balance && hasEnough ? (
+    <div className="grid gap-2">
+      <PurchaseConfirm
+        listingId={listing.id}
+        unitPrice={listing.unit_price}
+        maxQty={remaining}
+        balanceTotal={balance.total}
+        partialAllowed={isAgentListing}
+        viewerIsAgent={viewerIsAgent}
+      />
+      {giftButton}
+    </div>
+  ) : (
+    giftButton
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1216px] px-6 py-6 sm:px-8 sm:py-8">
@@ -168,6 +190,7 @@ export default async function CatalogListingDetailPage({
         storeName={listing.seller?.store_name ?? null}
         partialAllowed={isAgentListing}
         viewerIsAgent={viewerIsAgent}
+        viewerIsOwner={isOwner}
       />
 
       {/* Mobile layout */}
@@ -188,6 +211,7 @@ export default async function CatalogListingDetailPage({
         storeName={listing.seller?.store_name ?? null}
         partialAllowed={isAgentListing}
         viewerIsAgent={viewerIsAgent}
+        viewerIsOwner={isOwner}
       />
     </div>
   );

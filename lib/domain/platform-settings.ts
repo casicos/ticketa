@@ -45,6 +45,51 @@ export async function fetchBankInfo(supabase: SupabaseClient): Promise<BankInfo>
   };
 }
 
+export type BusinessAddress = {
+  company: string;
+  recipient: string;
+  phone: string;
+  zip: string;
+  address1: string;
+  address2: string | null;
+  note: string | null;
+};
+
+const FALLBACK_BIZ_ADDRESS: BusinessAddress = {
+  company: 'Ticketa (주)',
+  recipient: '검수팀',
+  phone: '070-7882-2144',
+  zip: '04793',
+  address1: '서울특별시 성동구 아차산로7길 15-1',
+  address2: '3층 3119호 (성수동2가, 제이제이빌딩)',
+  note: '발송 시 박스 외부에 매물 ID 4자리를 큰 글씨로 적어주세요.',
+};
+
+/**
+ * platform_settings.business_address — 사전 송부 매물을 보낼 사업장 소재지.
+ * 값이 비어있거나 오류 시 하드코딩 기본값 반환.
+ */
+export async function fetchBusinessAddress(supabase: SupabaseClient): Promise<BusinessAddress> {
+  const { data } = await supabase
+    .from('platform_settings')
+    .select('value')
+    .eq('key', 'business_address')
+    .maybeSingle<{
+      value: Partial<BusinessAddress>;
+    }>();
+  const v = data?.value;
+  if (!v) return FALLBACK_BIZ_ADDRESS;
+  return {
+    company: v.company ?? FALLBACK_BIZ_ADDRESS.company,
+    recipient: v.recipient ?? FALLBACK_BIZ_ADDRESS.recipient,
+    phone: v.phone ?? FALLBACK_BIZ_ADDRESS.phone,
+    zip: v.zip ?? FALLBACK_BIZ_ADDRESS.zip,
+    address1: v.address1 ?? FALLBACK_BIZ_ADDRESS.address1,
+    address2: v.address2 ?? FALLBACK_BIZ_ADDRESS.address2,
+    note: v.note ?? FALLBACK_BIZ_ADDRESS.note,
+  };
+}
+
 /** 출금 수수료 (원 단위). platform_settings.withdraw_fee.amount → 기본 1,000원. */
 export async function fetchWithdrawFee(supabase: SupabaseClient): Promise<number> {
   const { data } = await supabase

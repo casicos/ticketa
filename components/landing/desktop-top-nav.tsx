@@ -8,7 +8,7 @@ import { LogoLockup } from './logo';
  */
 export function DesktopTopNav({
   tone = 'light',
-  activeNav = '시세',
+  activeNav = '시세·매물',
   user = null,
 }: {
   tone?: 'light' | 'dark';
@@ -17,11 +17,9 @@ export function DesktopTopNav({
 }) {
   const isDark = tone === 'dark';
   const navItems = [
-    { label: '시세', href: '/catalog' },
-    { label: '매물', href: '/catalog' },
+    { label: '시세·매물', href: '/catalog' },
     { label: '마일리지', href: '/account/mileage' },
     { label: '선물하기', href: '/account/mileage' },
-    { label: '도움말', href: '#' },
   ];
 
   return (

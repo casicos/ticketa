@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { AdminPageHead } from '@/components/admin/admin-shell';
 import { R2Pill, R2TabBar, type R2TabItem } from '@/components/admin/r2';
 import { DeptMark, type Department } from '@/components/ticketa/dept-mark';
-import { shortId } from '@/lib/format';
+import { shortId, formatDenominationLabel } from '@/lib/format';
 import { LISTING_STATUS_LABELS } from '@/lib/domain/listings';
 import { fetchCancellations } from '@/lib/domain/admin/cancellations';
 import { ApproveCancellationButton, RejectCancellationButton } from './cancellation-actions';
@@ -88,7 +88,7 @@ export default async function AdminCancellationsPage({
             const thumb = sku?.thumbnail_url ?? null;
             const face = sku?.denomination ?? 0;
             const skuLabel = sku
-              ? `${shortBrandLabel(brandRaw)} ${(face / 10000).toLocaleString('ko-KR')}만원권`
+              ? `${shortBrandLabel(brandRaw)} ${formatDenominationLabel(face)}`
               : '알 수 없는 상품권';
             const requesterName =
               c.requester?.store_name ||
