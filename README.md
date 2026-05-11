@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ticketa — B2C Gift Certificate Brokerage
 
-## Getting Started
+백화점 상품권(롯데/현대/신세계 등) 실물 B2C 중개 플랫폼.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router, TypeScript strict)
+- Tailwind v4 + shadcn/ui
+- Supabase (Postgres + Auth + Storage, Seoul ap-northeast-2)
+- Vercel (US-East 프리티어 → Pro icn1 전환 예정)
+- Sentry + Vercel Analytics + audit_events
+
+## Docs
+
+- 플랜: `.omc/plans/b2c-giftcard-broker-mvp.md`
+- 운영 SOP: `docs/ops/`
+- UAT: `docs/uat-checklist.md`
+- Launch: `docs/launch-checklist.md`
+
+## Local Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local
+# .env.local 채우기 (Supabase dev 프로젝트 연결)
+pnpm dev                         # http://localhost:3000
+pnpm exec supabase start         # 로컬 Postgres 에뮬레이터
+pnpm exec supabase db reset      # 마이그레이션 + seed 적용
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tests
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm typecheck
+pnpm lint                        # boundaries 포함
+pnpm test                        # Vitest unit + integration
+pnpm test:e2e                    # Playwright E2E
+pnpm build                       # production build 검증
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
+- Preview: Vercel auto-deploy on PR
+- Production: `main` branch merge → Vercel 수동 promote
 
-To learn more about Next.js, take a look at the following resources:
+## Security Boundaries
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `lib/supabase/admin.ts` → `app/(admin)/**` + `lib/domain/admin/**`에서만 import (ESLint boundaries 강제)
+- `lib/supabase/transaction.ts` → `lib/domain/**`에서만 import
+- 계좌번호 pgcrypto 암호화, 마지막 4자리만 UI 표시

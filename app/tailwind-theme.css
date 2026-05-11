@@ -1,0 +1,169 @@
+/* =========================================================================
+   Ticketa — Tailwind v4 @theme bridge
+   -------------------------------------------------------------------------
+   globals.css 의 CSS variables 를 Tailwind v4 utility 로 노출.
+   layout.tsx import 순서: globals.css → tailwind-theme.css
+
+   이 매핑이 있어야 `bg-primary`, `text-foreground`, `border-border`,
+   `bg-stage-5-paid`, `font-sans`, `rounded-lg` 등이 동작.
+   ========================================================================= */
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* ----- shadcn semantic colors ----- */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ----- Brand scales (text-ticketa-blue-500 / bg-ticketa-gold-500 ...) ----- */
+  --color-ticketa-blue-50: var(--ticketa-blue-50);
+  --color-ticketa-blue-100: var(--ticketa-blue-100);
+  --color-ticketa-blue-200: var(--ticketa-blue-200);
+  --color-ticketa-blue-300: var(--ticketa-blue-300);
+  --color-ticketa-blue-400: var(--ticketa-blue-400);
+  --color-ticketa-blue-500: var(--ticketa-blue-500);
+  --color-ticketa-blue-600: var(--ticketa-blue-600);
+  --color-ticketa-blue-700: var(--ticketa-blue-700);
+  --color-ticketa-blue-800: var(--ticketa-blue-800);
+  --color-ticketa-blue-900: var(--ticketa-blue-900);
+
+  --color-ticketa-gold-50: var(--ticketa-gold-50);
+  --color-ticketa-gold-100: var(--ticketa-gold-100);
+  --color-ticketa-gold-200: var(--ticketa-gold-200);
+  --color-ticketa-gold-300: var(--ticketa-gold-300);
+  --color-ticketa-gold-400: var(--ticketa-gold-400);
+  --color-ticketa-gold-500: var(--ticketa-gold-500);
+  --color-ticketa-gold-600: var(--ticketa-gold-600);
+  --color-ticketa-gold-700: var(--ticketa-gold-700);
+
+  /* ----- Warm neutral scale ----- */
+  --color-warm-0: var(--warm-0);
+  --color-warm-25: var(--warm-25);
+  --color-warm-50: var(--warm-50);
+  --color-warm-100: var(--warm-100);
+  --color-warm-200: var(--warm-200);
+  --color-warm-300: var(--warm-300);
+  --color-warm-400: var(--warm-400);
+  --color-warm-500: var(--warm-500);
+  --color-warm-600: var(--warm-600);
+  --color-warm-700: var(--warm-700);
+
+  /* ----- Stage palette ----- */
+  --color-stage-1-pending: var(--stage-1-pending);
+  --color-stage-2-inspect: var(--stage-2-inspect);
+  --color-stage-3-verified: var(--stage-3-verified);
+  --color-stage-4-payable: var(--stage-4-payable);
+  --color-stage-5-paid: var(--stage-5-paid);
+  --color-stage-6-shipping: var(--stage-6-shipping);
+  --color-stage-7-complete: var(--stage-7-complete);
+
+  /* ----- Department brand colors ----- */
+  --color-dept-lotte: var(--dept-lotte);
+  --color-dept-hyundai: var(--dept-hyundai);
+  --color-dept-shinsegae: var(--dept-shinsegae);
+  --color-dept-galleria: var(--dept-galleria);
+  --color-dept-ak: var(--dept-ak);
+
+  /* ----- Semantic ----- */
+  --color-success: var(--semantic-success);
+  --color-warning: var(--semantic-warning);
+  --color-error: var(--semantic-error);
+  --color-info: var(--semantic-info);
+
+  /* ----- Radius ----- */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  /* ----- Shadow ----- */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-modal: var(--shadow-modal);
+
+  /* ----- Typography ----- */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-en: var(--font-en);
+
+  /* ----- Type scale ----- */
+  --text-xs: var(--text-xs);
+  --text-xs--line-height: var(--leading-xs);
+  --text-sm: var(--text-sm);
+  --text-sm--line-height: var(--leading-sm);
+  --text-base: var(--text-base);
+  --text-base--line-height: var(--leading-base);
+  --text-md: var(--text-md);
+  --text-md--line-height: var(--leading-md);
+  --text-lg: var(--text-lg);
+  --text-lg--line-height: var(--leading-lg);
+  --text-xl: var(--text-xl);
+  --text-xl--line-height: var(--leading-xl);
+  --text-2xl: var(--text-2xl);
+  --text-2xl--line-height: var(--leading-2xl);
+  --text-3xl: var(--text-3xl);
+  --text-3xl--line-height: var(--leading-3xl);
+  --text-4xl: var(--text-4xl);
+  --text-4xl--line-height: var(--leading-4xl);
+  --text-5xl: var(--text-5xl);
+  --text-5xl--line-height: var(--leading-5xl);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Match design canvas (page-mockups/index.html) — Pretendard natural line-height. */
+    /* Tailwind v4 preflight forces html line-height:1.5; design mockup uses normal    */
+    /* (≈1.2). 1.35 로 타이트하게 맞춰 어드민/카탈로그 모두 디자인 분위기 일치.       */
+    line-height: normal;
+    font-feature-settings: 'ss01', 'ss02', 'tnum';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html {
+    @apply font-sans;
+    line-height: normal;
+  }
+}

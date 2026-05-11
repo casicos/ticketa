@@ -3,5 +3,9 @@ import path from 'node:path';
 
 export default defineConfig({
   resolve: { alias: { '@': path.resolve(__dirname, '.') } },
-  test: { environment: 'node', globals: true },
+  test: {
+    environment: 'node',
+    globals: true,
+    exclude: ['node_modules/**', '.next/**', 'tests/e2e/**', 'tests/db/**'],
+  },
 });

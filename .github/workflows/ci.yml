@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint (incl. boundaries)
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Unit + Integration tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder______________________
+
+  # pgTAP RLS 매트릭스 — Phase 7에서 본격 활성화
+  # db-policies:
+  #   runs-on: ubuntu-latest
+  #   services:
+  #     postgres:
+  #       image: postgres:16
+  #       env: { POSTGRES_PASSWORD: postgres }
+  #       ports: ['5432:5432']
+  #   steps: ...
