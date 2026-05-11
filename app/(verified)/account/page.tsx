@@ -3,74 +3,30 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/guards';
 import { fetchMyMileageBalance } from '@/lib/domain/mileage';
+import { fetchMyListingCounts } from '@/lib/domain/listing-counts';
 import { MyRoomShell } from '@/components/account/my-room-shell';
 import { formatKRW } from '@/lib/format';
 
-type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
-
-type SellCounts = { submitted: number; in_progress: number; completed: number };
-type BuyCounts = { purchased: number; in_progress: number; completed: number };
-
-async function getSellCounts(supabase: SupabaseServerClient, userId: string): Promise<SellCounts> {
-  const [submitted, inProgress, completed] = await Promise.all([
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('seller_id', userId)
-      .eq('status', 'submitted'),
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('seller_id', userId)
-      .in('status', ['purchased', 'handed_over', 'received', 'verified', 'shipped']),
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('seller_id', userId)
-      .eq('status', 'completed'),
-  ]);
-  return {
-    submitted: submitted.count ?? 0,
-    in_progress: inProgress.count ?? 0,
-    completed: completed.count ?? 0,
-  };
-}
-
-async function getBuyCounts(supabase: SupabaseServerClient, userId: string): Promise<BuyCounts> {
-  const [purchased, inProgress, completed] = await Promise.all([
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('buyer_id', userId)
-      .eq('status', 'purchased'),
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('buyer_id', userId)
-      .in('status', ['handed_over', 'received', 'verified', 'shipped']),
-    supabase
-      .from('listing')
-      .select('id', { count: 'exact', head: true })
-      .eq('buyer_id', userId)
-      .eq('status', 'completed'),
-  ]);
-  return {
-    purchased: purchased.count ?? 0,
-    in_progress: inProgress.count ?? 0,
-    completed: completed.count ?? 0,
-  };
-}
-
 export default async function AccountPage() {
-  // current + supabase 병렬화. 이후 count/mileage 쿼리는 user.id 의존.
+  // current + supabase 병렬화. 이후 RPC/mileage 는 인증 필요.
   const [current, supabase] = await Promise.all([getCurrentUser(), createSupabaseServerClient()]);
   if (!current) redirect('/login?next=/account');
 
-  const [sellCounts, buyCounts, mileage] = await Promise.all([
-    getSellCounts(supabase, current.auth.id),
-    getBuyCounts(supabase, current.auth.id),
+  // 0048 RPC: 기존 getSellCounts(3) + getBuyCounts(3) = 6 round-trip → 1 RPC.
+  const [listingCounts, mileage] = await Promise.all([
+    fetchMyListingCounts(supabase),
     fetchMyMileageBalance(supabase, current.auth.id),
   ]);
+  const sellCounts = {
+    submitted: listingCounts.sellSubmitted,
+    in_progress: listingCounts.sellInProgress,
+    completed: listingCounts.sellCompleted,
+  };
+  const buyCounts = {
+    purchased: listingCounts.buyPurchased,
+    in_progress: listingCounts.buyInProgress,
+    completed: listingCounts.buyCompleted,
+  };
 
   const displayName =
     current.profile?.full_name?.trim() ||
