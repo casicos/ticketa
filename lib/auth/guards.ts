@@ -45,18 +45,36 @@ function isSupabaseAuthError(e: unknown): boolean {
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) return null;
-    const user = data.user;
+
+    // getClaims() — asymmetric JWT 면 JWKS 로컬 검증 (~5ms), 아니면 getUser() 폴백.
+    // getUser() 직접 호출 대비 페이지당 500-1000ms 절약.
+    const { data, error } = await supabase.auth.getClaims();
+    if (error || !data?.claims) return null;
+    const claims = data.claims;
+    const userId = typeof claims.sub === 'string' ? claims.sub : null;
+    if (!userId) return null;
 
     const { data: profile } = await supabase
       .from('users')
       .select('id,email,username,phone,phone_verified,full_name,nickname,marketing_opt_in')
-      .eq('id', user.id)
+      .eq('id', userId)
       .maybeSingle<CurrentUser['profile']>();
 
-    const roles = extractRoles(user.app_metadata);
-    return { auth: user, profile: profile ?? null, roles };
+    // CurrentUser.auth 는 호환을 위해 User 모양으로 채워두지만 실제 사용처에선
+    // id / email / app_metadata 정도만 본다. 나머지 필드는 빈 값.
+    const appMeta = (claims as { app_metadata?: User['app_metadata'] }).app_metadata ?? {};
+    const userMeta = (claims as { user_metadata?: User['user_metadata'] }).user_metadata ?? {};
+    const auth = {
+      id: userId,
+      app_metadata: appMeta,
+      user_metadata: userMeta,
+      aud: 'authenticated',
+      created_at: '',
+      email: profile?.email ?? undefined,
+    } as unknown as User;
+
+    const roles = extractRoles(appMeta);
+    return { auth, profile: profile ?? null, roles };
   } catch (e) {
     // Supabase 가 stale refresh token / 429 rate limit / 네트워크 에러 등으로
     // throw 하는 모든 케이스를 unauthenticated 로 정상화. 보호 라우트는
