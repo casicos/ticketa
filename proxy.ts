@@ -37,29 +37,29 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // 미들웨어는 경로 게이트 용도. JWT 는 Supabase 서버가 서명 — 위조 불가.
-  // getUser() 는 매 요청마다 /auth/v1/user 로 HTTP 콜 (500ms–1s) 을 때리는 반면
-  // getSession() 은 쿠키만 디코드 (수 ms). 토큰 만료 시 자동 refresh.
-  // 실제 데이터 접근 시점에 supabase 가 다시 토큰을 검증하므로 보안상 충분.
-  let user:
-    | NonNullable<Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']>['user']
-    | null = null;
+  // getClaims() — asymmetric JWT(sb_publishable_*) 는 JWKS 로 로컬 서명 검증 (수 ms),
+  // symmetric 이면 자동으로 getUser() 폴백. getSession().user 를 직접 읽을 때 나오는
+  // "could be insecure" 경고도 사라짐.
+  let userId: string | null = null;
+  let roles: Role[] = [];
   try {
-    const { data, error } = await supabase.auth.getSession();
-    if (!error) user = data.session?.user ?? null;
+    const { data, error } = await supabase.auth.getClaims();
+    if (!error && data?.claims) {
+      userId = typeof data.claims.sub === 'string' ? data.claims.sub : null;
+      const appMeta = (data.claims as { app_metadata?: unknown }).app_metadata;
+      roles = extractRoles(appMeta);
+    }
   } catch (e) {
     if (!isSupabaseAuthError(e)) throw e;
   }
 
   // --- 미로그인 처리 ---
-  if (!user) {
+  if (!userId) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = '/login';
     redirect.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`;
     return NextResponse.redirect(redirect);
   }
-
-  const roles = extractRoles(user.app_metadata);
 
   // --- /admin/** → admin role 필요 ---
   if (pathname.startsWith('/admin')) {
@@ -89,7 +89,7 @@ export async function proxy(request: NextRequest) {
     const { data: profile } = await supabase
       .from('users')
       .select('phone_verified')
-      .eq('id', user.id)
+      .eq('id', userId)
       .maybeSingle<{ phone_verified: boolean }>();
 
     if (!profile?.phone_verified) {
