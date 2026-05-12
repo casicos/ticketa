@@ -37,8 +37,15 @@ export default async function AccountPage() {
   const totalSell = sellCounts.submitted + sellCounts.in_progress + sellCounts.completed;
   const totalBuy = buyCounts.purchased + buyCounts.in_progress + buyCounts.completed;
 
+  const sidebarCounts = {
+    sellSubmitted: listingCounts.sellSubmitted,
+    sellInProgress: listingCounts.sellInProgress,
+    buyPurchased: listingCounts.buyPurchased,
+    buyInProgress: listingCounts.buyInProgress,
+  };
+
   return (
-    <MyRoomShell active="wallet">
+    <MyRoomShell active="wallet" counts={sidebarCounts}>
       {/* Membership / balance hero */}
       <section
         className="relative overflow-hidden rounded-2xl p-6 text-white sm:p-8"

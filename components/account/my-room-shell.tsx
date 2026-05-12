@@ -141,18 +141,29 @@ async function MyRoomSidebarWithCounts({ active }: { active: MyRoomActive }) {
 export function MyRoomShell({
   active,
   children,
+  counts,
 }: {
   active: MyRoomActive;
   children: React.ReactNode;
+  /**
+   * 호출 페이지가 이미 listing counts 를 페치했다면 prop 으로 전달.
+   * Suspense + 추가 RPC 없이 즉시 카운트 표시. (e.g. /account 페이지)
+   * 미제공이면 Suspense boundary 안에서 RPC 자체 페치.
+   */
+  counts?: SidebarCounts;
 }) {
-  // children 은 즉시 렌더. 사이드바 카운트는 Suspense 로 스트리밍 — RPC 가 느려도
-  // 메인 컨텐츠가 블록되지 않음. fallback 은 카운트 없는 동일한 사이드바.
+  // counts 가 prop 으로 들어오면 사이드바 즉시 렌더 (RPC 0회).
+  // 없으면 Suspense 로 스트리밍 — RPC 가 느려도 메인 컨텐츠가 블록되지 않음.
   return (
     <div className="mx-auto w-full max-w-[1216px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
-        <Suspense fallback={<MyRoomSidebar active={active} counts={null} />}>
-          <MyRoomSidebarWithCounts active={active} />
-        </Suspense>
+        {counts !== undefined ? (
+          <MyRoomSidebar active={active} counts={counts} />
+        ) : (
+          <Suspense fallback={<MyRoomSidebar active={active} counts={null} />}>
+            <MyRoomSidebarWithCounts active={active} />
+          </Suspense>
+        )}
 
         <main className="min-w-0">{children}</main>
       </div>
