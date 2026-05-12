@@ -1,0 +1,173 @@
+import 'server-only';
+import { cache } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+export type Role = 'seller' | 'agent' | 'admin';
+
+export type CurrentUser = {
+  auth: User;
+  profile: {
+    id: string;
+    email: string | null;
+    username: string | null;
+    phone: string | null;
+    phone_verified: boolean;
+    full_name: string;
+    nickname: string | null;
+    marketing_opt_in: boolean;
+  } | null;
+  roles: Role[];
+};
+
+/**
+ * Supabase auth-js 가 throw 하는 에러를 식별하는 가드.
+ * - over_request_rate_limit (429)
+ * - refresh_token_not_found (stale cookie)
+ * - 기타 401/403 등 모두 unauthenticated 로 처리.
+ */
+function isSupabaseAuthError(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && ('__isAuthError' in e || 'isAuthError' in e);
+}
+
+/**
+ * JWT app_metadata 에서 프로필을 복원.
+ *
+ * 0047 migration 으로 phone_verified / full_name / nickname / username 4 필드가
+ * raw_app_meta_data 에 캐싱됨. 이 함수는 그 값을 안전하게 (타입 검증) 꺼내서
+ * CurrentUser['profile'] 형태로 반환.
+ *
+ * 반환 null = 오래된 pre-backfill 토큰 → 호출자가 DB fallback 수행.
+ *
+ * phone, marketing_opt_in 은 JWT 에 없는 DB 전용 필드 — 페이지가 필요 시 별도 조회.
+ */
+export function profileFromClaims(
+  userId: string,
+  email: string | null,
+  appMeta: Record<string, unknown> | undefined,
+): CurrentUser['profile'] | null {
+  if (!appMeta || appMeta['phone_verified'] === undefined) return null;
+  // 타입 가드: 악의적으로 string "true" / 숫자 / object 가 와도 안전한 기본값.
+  const phoneVerified = appMeta['phone_verified'] === true;
+  const fullName = typeof appMeta['full_name'] === 'string' ? (appMeta['full_name'] as string) : '';
+  const nickname = typeof appMeta['nickname'] === 'string' ? (appMeta['nickname'] as string) : null;
+  const username = typeof appMeta['username'] === 'string' ? (appMeta['username'] as string) : null;
+  return {
+    id: userId,
+    email,
+    username,
+    phone: null, // JWT 미포함 — /account/profile, /account/verification 에서 별도 조회
+    phone_verified: phoneVerified,
+    full_name: fullName,
+    nickname,
+    marketing_opt_in: false, // JWT 미포함 — /account/profile 에서 별도 조회
+  };
+}
+
+/**
+ * 현재 요청의 로그인 사용자 + 프로필 + 역할.
+ *
+ * `React.cache` 로 per-request memoize — 한 render 안에서 여러 번 호출돼도
+ * Supabase auth.getUser + profile 조회는 각각 1회씩만 발생한다. 다른 guards
+ * (requireAuth, hasRole, requireRole, requirePhoneVerified) 도 모두 이 함수를
+ * 통해 동일 결과를 공유한다.
+ *
+ * 에러 처리 — auth.getUser 가 stale refresh token / rate limit (429) 등으로
+ * throw 하거나 error 필드를 채우면 null 로 정상화. 보호 라우트의 가드가
+ * 자연스럽게 unauthenticated 흐름을 타도록 한다.
+ */
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    // getClaims() — asymmetric JWT 면 JWKS 로컬 검증 (~5ms), 아니면 getUser() 폴백.
+    // getUser() 직접 호출 대비 페이지당 500-1000ms 절약.
+    const { data, error } = await supabase.auth.getClaims();
+    if (error || !data?.claims) return null;
+    const claims = data.claims;
+    const userId = typeof claims.sub === 'string' ? claims.sub : null;
+    if (!userId) return null;
+
+    const appMeta = (claims as { app_metadata?: User['app_metadata'] }).app_metadata ?? {};
+    const userMeta = (claims as { user_metadata?: User['user_metadata'] }).user_metadata ?? {};
+    const emailFromClaims =
+      typeof (claims as { email?: unknown }).email === 'string'
+        ? ((claims as { email: string }).email as string)
+        : null;
+
+    // 0047 migration 이후: JWT 에서 직접 phone_verified/full_name/nickname/username 복원.
+    // pre-backfill 토큰이면 null → DB fallback.
+    let profile = profileFromClaims(userId, emailFromClaims, appMeta);
+    if (!profile) {
+      const { data: dbProfile } = await supabase
+        .from('users')
+        .select('id,email,username,phone,phone_verified,full_name,nickname,marketing_opt_in')
+        .eq('id', userId)
+        .maybeSingle<CurrentUser['profile']>();
+      profile = dbProfile ?? null;
+    }
+
+    // CurrentUser.auth 는 호환을 위해 User 모양으로 채워두지만 실제 사용처에선
+    // id / email / app_metadata 정도만 본다. 나머지 필드는 빈 값.
+    const auth = {
+      id: userId,
+      app_metadata: appMeta,
+      user_metadata: userMeta,
+      aud: 'authenticated',
+      created_at: '',
+      email: profile?.email ?? emailFromClaims ?? undefined,
+    } as unknown as User;
+
+    const roles = extractRoles(appMeta);
+    return { auth, profile, roles };
+  } catch (e) {
+    // Supabase 가 stale refresh token / 429 rate limit / 네트워크 에러 등으로
+    // throw 하는 모든 케이스를 unauthenticated 로 정상화. 보호 라우트는
+    // proxy.ts 가 /login 으로 보내고, 공개 라우트는 비로그인 흐름을 탄다.
+    if (isSupabaseAuthError(e)) return null;
+    // 인증과 무관한 진짜 에러는 다시 throw (DB 권한 오류, 네트워크 등은 의도된 보고)
+    throw e;
+  }
+});
+
+export async function requireAuth(): Promise<User> {
+  const current = await getCurrentUser();
+  if (!current) throw new AuthError('UNAUTHENTICATED');
+  return current.auth;
+}
+
+export async function hasRole(role: Role): Promise<boolean> {
+  const current = await getCurrentUser();
+  return current?.roles.includes(role) ?? false;
+}
+
+export async function requireRole(role: Role): Promise<void> {
+  const ok = await hasRole(role);
+  if (!ok) throw new AuthError('FORBIDDEN');
+}
+
+export async function requirePhoneVerified(): Promise<void> {
+  const current = await getCurrentUser();
+  if (!current) throw new AuthError('UNAUTHENTICATED');
+  if (!current.profile?.phone_verified) throw new AuthError('PHONE_UNVERIFIED');
+}
+
+export function isForbidden(code: string) {
+  return { ok: false as const, code };
+}
+
+export class AuthError extends Error {
+  code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'PHONE_UNVERIFIED';
+  constructor(code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'PHONE_UNVERIFIED') {
+    super(code);
+    this.name = 'AuthError';
+    this.code = code;
+  }
+}
+
+export function extractRoles(appMetadata: User['app_metadata'] | undefined): Role[] {
+  const raw = (appMetadata?.['roles'] ?? []) as unknown;
+  if (!Array.isArray(raw)) return [];
+  const allowed: Role[] = ['seller', 'agent', 'admin'];
+  return raw.filter((r): r is Role => typeof r === 'string' && (allowed as string[]).includes(r));
+}

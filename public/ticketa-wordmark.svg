@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 96" fill="none">
+  
+  <rect x="6" y="6" width="84" height="84" rx="22" fill="#11161E"></rect>
+  <text x="48" y="60" font-family="Pretendard, Inter, sans-serif" font-weight="900" font-size="36" fill="#fff" text-anchor="middle" letter-spacing="-1.5">TK</text>
+  <circle cx="74" cy="22" r="4" fill="#D4A24C"></circle>
+
+  
+  <text x="108" y="68" font-family="Pretendard, Inter, sans-serif" font-weight="900" font-size="44" fill="#0F172A" letter-spacing="1.8">TICKETA</text>
+  <circle cx="323" cy="66" r="4" fill="#D4A24C"></circle>
+</svg>

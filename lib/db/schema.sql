@@ -1,0 +1,1 @@
+-- See supabase/migrations/ for source of truth

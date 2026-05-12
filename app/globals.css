@@ -1,130 +1,331 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+/* =========================================================================
+   Ticketa Design System — globals.css
+   shadcn/ui (Tailwind v4) 호환 — @theme 매핑은 ./tailwind-theme.css 가 담당
+   ========================================================================= */
 
-@custom-variant dark (&:is(.dark *));
+/* ---------- Webfonts ---------- */
+/* Inter (English/Latin secondary) + Geist Mono (numeric/mono) — Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
+/* Pretendard — self-hosted (public/fonts/) */
+@font-face { font-family: 'Pretendard'; font-weight: 100; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-Thin.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 200; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-ExtraLight.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 300; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-Light.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 400; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-Regular.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 500; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-Medium.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 600; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-SemiBold.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 700; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-Bold.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 800; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-ExtraBold.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 900; font-style: normal; font-display: swap;
+  src: url('/fonts/Pretendard-Black.woff2') format('woff2'); }
 
+/* =========================================================================
+   1. Base CSS variables — light theme
+   ========================================================================= */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* ---------- Brand color ---------- */
+  --ticketa-blue-50:  oklch(0.97  0.02  255);
+  --ticketa-blue-100: oklch(0.93  0.05  255);
+  --ticketa-blue-200: oklch(0.85  0.10  258);
+  --ticketa-blue-300: oklch(0.76  0.16  260);
+  --ticketa-blue-400: oklch(0.66  0.20  260);
+  --ticketa-blue-500: oklch(0.55  0.22  260);   /* Primary #0066FF */
+  --ticketa-blue-600: oklch(0.48  0.22  262);
+  --ticketa-blue-700: oklch(0.40  0.19  263);
+  --ticketa-blue-800: oklch(0.33  0.15  264);
+  --ticketa-blue-900: oklch(0.25  0.10  264);
+
+  --ticketa-gold-50:  oklch(0.97  0.02  85);
+  --ticketa-gold-100: oklch(0.93  0.05  85);
+  --ticketa-gold-200: oklch(0.87  0.09  82);
+  --ticketa-gold-300: oklch(0.81  0.11  80);
+  --ticketa-gold-400: oklch(0.78  0.13  80);
+  --ticketa-gold-500: oklch(0.74  0.13  80);    /* Premium gold #D4A24C */
+  --ticketa-gold-600: oklch(0.65  0.12  75);
+  --ticketa-gold-700: oklch(0.55  0.11  70);
+
+  /* ---------- Warm neutrals ---------- */
+  --warm-0:    oklch(1     0     0);
+  --warm-25:   oklch(0.987 0.003 70);
+  --warm-50:   oklch(0.975 0.004 70);
+  --warm-100:  oklch(0.955 0.005 70);
+  --warm-200:  oklch(0.92  0.005 70);
+  --warm-300:  oklch(0.86  0.006 70);
+  --warm-400:  oklch(0.70  0.008 70);
+  --warm-500:  oklch(0.55  0.008 70);
+  --warm-600:  oklch(0.45  0.008 70);
+  --warm-700:  oklch(0.34  0.008 70);
+  --warm-800:  oklch(0.24  0.008 70);
+  --warm-900:  oklch(0.16  0.008 70);
+  --warm-950:  oklch(0.10  0.008 70);
+
+  /* ---------- Semantic ---------- */
+  --semantic-success: oklch(0.68  0.18  148);
+  --semantic-warning: oklch(0.78  0.16  70);
+  --semantic-error:   oklch(0.65  0.23  25);
+  --semantic-info:    var(--ticketa-blue-500);
+
+  /* ---------- 거래 상태 7-step palette ---------- */
+  --stage-1-pending:   oklch(0.78  0.012 80);
+  --stage-2-inspect:   oklch(0.72  0.06  240);
+  --stage-3-verified:  oklch(0.66  0.10  250);
+  --stage-4-payable:   oklch(0.60  0.14  255);
+  --stage-5-paid:      oklch(0.55  0.18  260);
+  --stage-6-shipping:  oklch(0.62  0.13  215);
+  --stage-7-complete:  oklch(0.72  0.11  180);
+
+  /* ---------- shadcn semantic mapping ---------- */
+  --background:           var(--warm-25);
+  --foreground:           var(--warm-900);
+  --card:                 var(--warm-0);
+  --card-foreground:      var(--warm-900);
+  --popover:              var(--warm-0);
+  --popover-foreground:   var(--warm-900);
+  --primary:              var(--ticketa-blue-500);
+  --primary-foreground:   var(--warm-0);
+  --secondary:            var(--warm-100);
+  --secondary-foreground: var(--warm-900);
+  --muted:                var(--warm-100);
+  --muted-foreground:     var(--warm-500);
+  --accent:               var(--ticketa-gold-50);
+  --accent-foreground:    var(--ticketa-gold-700);
+  --destructive:          var(--semantic-error);
+  --border:               var(--warm-200);
+  --input:                var(--warm-200);
+  --ring:                 var(--ticketa-blue-400);
+
+  --chart-1: var(--ticketa-blue-500);
+  --chart-2: var(--ticketa-gold-500);
+  --chart-3: var(--stage-2-inspect);
+  --chart-4: var(--stage-6-shipping);
+  --chart-5: var(--stage-4-payable);
+
+  --sidebar:                       var(--warm-0);
+  --sidebar-foreground:            var(--warm-900);
+  --sidebar-primary:               var(--ticketa-blue-500);
+  --sidebar-primary-foreground:    var(--warm-0);
+  --sidebar-accent:                var(--warm-100);
+  --sidebar-accent-foreground:     var(--warm-900);
+  --sidebar-border:                var(--warm-200);
+  --sidebar-ring:                  var(--ticketa-blue-400);
+
+  /* ---------- 백화점 brand colors ---------- */
+  --dept-lotte:     oklch(0.60  0.21  28);
+  --dept-hyundai:   oklch(0.32  0.13  255);
+  --dept-shinsegae: oklch(0.10  0     0);
+  --dept-galleria:  oklch(0.42  0.18  320);
+  --dept-ak:        oklch(0.58  0.21  29);
+
+  /* ---------- Radius ---------- */
+  --radius:       0.625rem;
+  --radius-xs:    0.25rem;
+  --radius-sm:    0.375rem;
+  --radius-md:    0.5rem;
+  --radius-lg:    0.75rem;
+  --radius-xl:    1rem;
+  --radius-2xl:   1.5rem;
+  --radius-full:  9999px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-xs:    0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg:    0 12px 24px -8px rgba(0, 0, 0, 0.12);
+  --shadow-modal: 0 20px 50px -10px rgba(0, 0, 0, 0.15);
+
+  /* ---------- Spacing (4px baseline) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-14: 56px;
+  --space-20: 80px;
+
+  /* ---------- Typography ---------- */
+  --font-sans:    'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont,
+                  'Apple SD Gothic Neo', 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular,
+                  Menlo, Monaco, Consolas, monospace;
+  --font-en:      'Inter', sans-serif;
+
+  /* ---------- Type scale ---------- */
+  --text-xs:   12px;     --leading-xs:   16px;
+  --text-sm:   13px;     --leading-sm:   20px;
+  --text-base: 15px;     --leading-base: 24px;
+  --text-md:   16px;     --leading-md:   26px;
+  --text-lg:   18px;     --leading-lg:   28px;
+  --text-xl:   20px;     --leading-xl:   30px;
+  --text-2xl:  24px;     --leading-2xl:  34px;
+  --text-3xl:  30px;     --leading-3xl:  40px;
+  --text-4xl:  38px;     --leading-4xl:  48px;
+  --text-5xl:  48px;     --leading-5xl:  56px;
+
+  /* ---------- Motion ---------- */
+  --easing-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast:     150ms;
+  --duration-base:     250ms;
+  --duration-slow:     400ms;
 }
 
+/* =========================================================================
+   2. Dark theme
+   ========================================================================= */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background:           var(--warm-950);
+  --foreground:           var(--warm-50);
+  --card:                 oklch(0.18 0.008 70);
+  --card-foreground:      var(--warm-50);
+  --popover:              oklch(0.18 0.008 70);
+  --popover-foreground:   var(--warm-50);
+  --primary:              var(--ticketa-blue-400);
+  --primary-foreground:   var(--warm-950);
+  --secondary:            oklch(0.24 0.008 70);
+  --secondary-foreground: var(--warm-50);
+  --muted:                oklch(0.24 0.008 70);
+  --muted-foreground:     oklch(0.68 0.008 70);
+  --accent:               oklch(0.30 0.07 80);
+  --accent-foreground:    var(--ticketa-gold-200);
+  --border:               oklch(1 0 0 / 8%);
+  --input:                oklch(1 0 0 / 12%);
+  --ring:                 var(--ticketa-blue-400);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
+/* =========================================================================
+   3. Semantic typography classes
+   ========================================================================= */
+html { font-family: var(--font-sans); }
+body { background: var(--background); color: var(--foreground); font-feature-settings: "ss01", "ss02", "tnum"; }
+
+/* Tailwind v4 preflight resets buttons to cursor:default — restore v3 ergonomics */
+button:not(:disabled),
+[role='button']:not(:disabled),
+[type='button']:not(:disabled),
+[type='submit']:not(:disabled),
+[type='reset']:not(:disabled) { cursor: pointer; }
+button:disabled,
+[role='button'][aria-disabled='true'] { cursor: not-allowed; }
+
+.t-display-1 {
+  font-family: var(--font-sans);
+  font-size: var(--text-5xl); line-height: var(--leading-5xl);
+  font-weight: 700; letter-spacing: -0.025em;
+}
+.t-display-2 {
+  font-family: var(--font-sans);
+  font-size: var(--text-4xl); line-height: var(--leading-4xl);
+  font-weight: 700; letter-spacing: -0.022em;
+}
+.t-h1 {
+  font-size: var(--text-3xl); line-height: var(--leading-3xl);
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.t-h2 {
+  font-size: var(--text-2xl); line-height: var(--leading-2xl);
+  font-weight: 600; letter-spacing: -0.018em;
+}
+.t-h3 {
+  font-size: var(--text-xl); line-height: var(--leading-xl);
+  font-weight: 600; letter-spacing: -0.015em;
+}
+.t-h4 {
+  font-size: var(--text-lg); line-height: var(--leading-lg);
+  font-weight: 600; letter-spacing: -0.012em;
+}
+.t-body {
+  font-size: var(--text-base); line-height: var(--leading-base);
+  font-weight: 400; letter-spacing: -0.01em;
+}
+.t-body-strong {
+  font-size: var(--text-base); line-height: var(--leading-base);
+  font-weight: 600; letter-spacing: -0.01em;
+}
+.t-small {
+  font-size: var(--text-sm); line-height: var(--leading-sm);
+  font-weight: 400; letter-spacing: -0.005em;
+}
+.t-caption {
+  font-size: var(--text-xs); line-height: var(--leading-xs);
+  font-weight: 500; letter-spacing: 0;
+  color: var(--muted-foreground);
+}
+.t-label {
+  font-size: var(--text-xs); line-height: var(--leading-xs);
+  font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.t-money {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm); line-height: var(--leading-sm);
+  font-weight: 500;
+}
+.t-code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--muted);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+}
+
+/* Foreground utility tokens */
+.fg-1 { color: var(--warm-900); }
+.fg-2 { color: var(--warm-700); }
+.fg-3 { color: var(--warm-500); }
+.fg-muted { color: var(--muted-foreground); }
+.fg-primary { color: var(--primary); }
+.fg-gold { color: var(--ticketa-gold-600); }
+.fg-success { color: var(--semantic-success); }
+.fg-error { color: var(--semantic-error); }
+
+/* Layout helpers */
+.surface-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+}
+.surface-elevated {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+}
+
+/* Agent inbound form input baseline */
+.inbound-input {
+  width: 100%; height: 40px; padding: 0 12px;
+  border-radius: 8px; border: 1px solid var(--border);
+  font-size: 15px; font-weight: 600;
+  background: #fff; box-sizing: border-box;
+  outline: none;
+}
+.inbound-input:focus {
+  border-color: var(--ticketa-gold-700);
+  box-shadow: 0 0 0 2px rgba(212,162,76,0.18);
+}
+
+/* Auth field autofill — 브라우저 기본 노랑/파랑 배경을 흰색으로 덮어 wrapper 와 톤 맞춤 */
+input[data-slot='auth-field-input']:-webkit-autofill,
+input[data-slot='auth-field-input']:-webkit-autofill:hover,
+input[data-slot='auth-field-input']:-webkit-autofill:focus,
+input[data-slot='auth-field-input']:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition: background-color 5000s ease-in-out 0s;
 }
